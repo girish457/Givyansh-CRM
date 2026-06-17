@@ -296,6 +296,62 @@ export const ReminderSystem = ({
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [selectedRounds, setSelectedRounds] = useState<number[]>([]);
+  
+  const [showAskRevertModal, setShowAskRevertModal] = useState(false);
+  const [askRevertReason, setAskRevertReason] = useState("");
+
+  const getLogicalStatus = () => {
+    if (!active) return "";
+    if (active.type === 'STATUS_CHECK') {
+      return "All Rounds Done";
+    }
+    if (active.type === 'SELECTED_CELEBRATION') {
+      return "Selected";
+    }
+    if (active.type === 'JOINING_CHECK') {
+      return "Process To Joining";
+    }
+    return active.remarks || "Go For Interview";
+  };
+
+  const handleRevertLaterClick = () => {
+    setAskRevertReason("");
+    setShowAskRevertModal(true);
+  };
+
+  const handleSendRevertQuery = async () => {
+    if (!active) return;
+    setIsProcessing(true);
+    try {
+      const logicalStatus = getLogicalStatus();
+      const res = await fetch("/api/revert-queries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidateId: active.id,
+          queryReason: askRevertReason,
+          currentStatus: logicalStatus
+        })
+      });
+
+      if (res.ok) {
+        // Snooze for next day (24 hours)
+        updateReminder(active.id, { triggerAt: Date.now() + 24 * 60 * 60 * 1000 });
+        setShowAskRevertModal(false);
+        setAskRevertReason("");
+        if (onRefresh) onRefresh();
+        alert("Ask Revert request created and routed to superiors successfully!");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to create ask revert request.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error calling backend server.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Fetch jobs and me on mount
   useEffect(() => {
@@ -483,11 +539,18 @@ export const ReminderSystem = ({
             const currentActiveId = localStorage.getItem(activeKey);
             const existingReminder = savedReminders.find((r: any) => String(r.id) === String(cid));
             if (existingReminder) {
-              if (existingReminder.triggerAt > now && finalTriggerAt <= now) {
+              if (existingReminder.remarks !== c.remarks) {
+                // Status changed (e.g. resolved by superior). Clear old reminder.
+                savedReminders = savedReminders.filter((r: any) => String(r.id) !== String(cid));
+                if (currentActiveId === String(cid)) {
+                  localStorage.removeItem(activeKey);
+                  setActive(null);
+                }
+                updated = true;
+              } else if (existingReminder.triggerAt > now && finalTriggerAt <= now) {
                 // Keep the future scheduled/snoozed reminder in localStorage; do not overwrite with past database calculation
                 return;
-              }
-              if (Number(existingReminder.triggerAt) !== Number(finalTriggerAt)) {
+              } else if (Number(existingReminder.triggerAt) !== Number(finalTriggerAt)) {
                 // Time has changed (rescheduled or new follow-up date). Replace reminder.
                 savedReminders = savedReminders.filter((r: any) => String(r.id) !== String(cid));
                 if (currentActiveId === String(cid)) {
@@ -1058,7 +1121,7 @@ export const ReminderSystem = ({
             <button type="button" onClick={triggerRejectionReason} className="btn-reminder" style={{ background: "#dc2626", color: "#fff" }}>Rejected</button>
             <button type="button" onClick={() => handleOutcomeAction("Joined")} className="btn-reminder" style={{ background: "#2563eb", color: "#fff" }}>Joined</button>
             <button type="button" onClick={() => handleOutcomeAction("Process To Joining")} className="btn-reminder" style={{ background: "#0f172a", color: "#fff" }}>Process To Joining</button>
-            <button type="button" onClick={() => updateReminder(active.id, { triggerAt: Date.now() + 4 * 60 * 60 * 1000 })} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
+            <button type="button" onClick={handleRevertLaterClick} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
             <button type="button" onClick={triggerNotInterestedReason} className="btn-reminder" style={{ background: "#fee2e2", color: "#dc2626" }}>Not Interested</button>
           </>
         );
@@ -1068,7 +1131,7 @@ export const ReminderSystem = ({
           <>
             <button type="button" onClick={() => handleOutcomeAction("Process To Joining")} className="btn-reminder" style={{ background: "#2563eb", color: "#fff", gridColumn: "span 2" }}>Process To Joining</button>
             <button type="button" onClick={() => handleOutcomeAction("Joined")} className="btn-reminder" style={{ background: "#22c55e", color: "#fff" }}>Joined</button>
-            <button type="button" onClick={() => updateReminder(active.id, { triggerAt: Date.now() + 24 * 60 * 60 * 1000 })} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
+            <button type="button" onClick={handleRevertLaterClick} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
             <button type="button" onClick={triggerNotInterestedReason} className="btn-reminder" style={{ background: "#fee2e2", color: "#dc2626", gridColumn: "span 2" }}>Not Interested</button>
           </>
         );
@@ -1079,7 +1142,7 @@ export const ReminderSystem = ({
             <button type="button" onClick={() => handleOutcomeAction("Joined")} className="btn-reminder" style={{ background: "#22c55e", color: "#fff" }}>Yes (Joined)</button>
             <button type="button" onClick={triggerDroppedReason} className="btn-reminder" style={{ background: "#dc2626", color: "#fff" }}>No (Dropped)</button>
             <button type="button" onClick={() => handleOutcomeAction("Processing for Joining")} className="btn-reminder" style={{ background: "#2563eb", color: "#fff" }}>Processing for Joining</button>
-            <button type="button" onClick={() => updateReminder(active.id, { triggerAt: Date.now() + 5 * 60 * 60 * 1000 })} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
+            <button type="button" onClick={handleRevertLaterClick} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
           </>
         );
 
@@ -1298,6 +1361,71 @@ export const ReminderSystem = ({
                    <LucideLoader2 className="animate-spin" size={30} color="#3b82f6" />
                 </div>
               )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Ask Revert Approval Modal from Popup */}
+      {showAskRevertModal && active && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(15, 23, 42, 0.65)", backdropFilter: "blur(8px)", zIndex: 110000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            style={{ 
+              background: "#ffffff", 
+              borderRadius: "24px", 
+              width: "100%", 
+              maxWidth: "400px", 
+              overflow: "hidden", 
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.3)",
+              padding: "24px",
+              position: "relative"
+            }}
+          >
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 950, marginBottom: "8px", color: "#0f172a" }}>ASK REVERT APPROVAL</h3>
+            <p style={{ fontSize: "0.85rem", color: "#64748b", marginBottom: "16px", lineHeight: 1.4 }}>
+              Requesting superiors (TL, Manager, Boss) to review status transition logic for candidate {active.name}.
+            </p>
+            
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "#475569", display: "block", marginBottom: "6px" }}>Current Status</label>
+              <input 
+                type="text" 
+                value={getLogicalStatus()} 
+                disabled 
+                style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: "0.9rem", fontWeight: 700 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "#475569", display: "block", marginBottom: "6px" }}>Query Reason / Context</label>
+              <textarea 
+                value={askRevertReason}
+                onChange={(e) => setAskRevertReason(e.target.value)}
+                placeholder="Explain why you need status changes approved..."
+                required
+                rows={4}
+                style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1.5px solid #e2e8f0", fontSize: "0.85rem", outline: "none", resize: "none", boxSizing: "border-box" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button 
+                type="button" 
+                onClick={() => setShowAskRevertModal(false)} 
+                style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem" }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={handleSendRevertQuery}
+                disabled={!askRevertReason.trim()}
+                style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", background: "#2563eb", color: "white", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem", opacity: askRevertReason.trim() ? 1 : 0.6 }}
+              >
+                Send Query
+              </button>
             </div>
           </motion.div>
         </div>

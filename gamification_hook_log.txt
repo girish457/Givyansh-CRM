@@ -297,3 +297,12 @@
 [2026-06-17T06:36:18.011Z] Candidate 44 | isNew: false | Target User ID for points: 37
 [2026-06-17T06:36:18.012Z] Candidate 44 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
 [2026-06-17T06:36:18.041Z] Candidate 44 | isNew: false | Successfully awarded 70 coins for go_for_interview to user 37. New total: 574.3
+[2026-06-17T06:49:23.650Z] Candidate 36 | isNew: false | Starting gamification points evaluation. Remarks: "Joined", cvStatus: "Shared", status: "New"
+[2026-06-17T06:49:23.680Z] Candidate 36 | isNew: false | Target User ID for points: 37
+[2026-06-17T06:49:23.693Z] Candidate 36 | isNew: false | Evaluating Action inside loop: joined with points: 18
+[2026-06-17T06:49:23.764Z] Candidate 36 | isNew: false | Successfully awarded 18 coins for joined to user 37. New total: 592.3
+[2026-06-17T06:50:02.109Z] Candidate 37 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-17T06:50:02.125Z] Candidate 37 | isNew: false | Target User ID for points: 37
+[2026-06-17T06:50:02.127Z] Candidate 37 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
+[2026-06-17T06:50:02.139Z] Candidate 37 | isNew: false | Deduplication/Backwards triggered: actionType "go_for_interview" was either awarded previously or candidate has reached a higher status. Applying backwards revert penalty.
+[2026-06-17T06:50:02.160Z] Candidate 37 | isNew: false | Backwards penalty applied. Metrics updated.

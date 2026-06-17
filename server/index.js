@@ -3713,7 +3713,7 @@ app.get("/api/candidates", authenticate, async (req, res) => {
 
 app.post("/api/revert-queries", authenticate, async (req, res) => {
     try {
-        const { candidateId, queryReason } = req.body;
+        const { candidateId, queryReason, currentStatus } = req.body;
         let effectiveCompanyId = req.user.companyId;
         if (!effectiveCompanyId) {
             const firstCompany = await Company.findOne();
@@ -3762,7 +3762,7 @@ app.post("/api/revert-queries", authenticate, async (req, res) => {
             candidateNumber: candidate.phone,
             clientName: candidate.clientName || "Direct / No Client",
             jobTitle: candidate.designation || candidate.jobRole || "N/A",
-            currentStatus: candidate.remarks || "New",
+            currentStatus: currentStatus || candidate.remarks || "New",
             recruiterId: req.user.userId,
             recruiterName: recUser.name,
             tlId,

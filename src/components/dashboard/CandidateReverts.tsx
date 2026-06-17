@@ -1297,10 +1297,11 @@ export default function CandidateReverts({ candidates = [], currentUser, onRefre
                 <tbody>
                   {filteredCandidates.map((c, idx) => {
                     const cid = c.id || c._id;
-                    const status = c.remarks || "New";
-                    const hasPendingQuery = queries.some(q => String(q.candidateId) === String(cid) && q.status === "Pending");
+                    const pendingQuery = queries.find(q => String(q.candidateId) === String(cid) && q.status === "Pending");
+                    const status = pendingQuery ? pendingQuery.currentStatus : (c.remarks || "New");
+                    const hasPendingQuery = !!pendingQuery;
                     const hasPastRevert = queries.some(q => String(q.candidateId) === String(cid) && q.status !== "Pending");
-                    const revertCount = queries.filter(q => String(q.candidateId) === String(cid) && q.status !== "Pending").length;
+                    const revertCount = queries.filter(q => String(q.candidateId) === String(cid)).length;
 
                     return (
                       <tr key={cid} style={{ borderBottom: "1px solid #f1f5f9", background: idx % 2 === 0 ? "#f8fafc" : "#ffffff" }}>
