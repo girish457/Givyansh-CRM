@@ -44,7 +44,7 @@ export default function Contact() {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5000/api/public/inquiry", {
+      const res = await fetch("/api/public/inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

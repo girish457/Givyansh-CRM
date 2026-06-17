@@ -27,7 +27,7 @@ export default function Pricing() {
 
   useEffect(() => {
     // 1. Fetch Plans
-    fetch("http://localhost:5000/api/pricing")
+    fetch("/api/pricing")
       .then(res => res.json())
       .then(data => {
         setPlans(Array.isArray(data) ? data : []);
@@ -40,7 +40,7 @@ export default function Pricing() {
       });
 
     // 2. Fetch Discount Setting
-    fetch("http://localhost:5000/api/settings/yearly_discount")
+    fetch("/api/settings/yearly_discount")
       .then(res => res.json())
       .then(data => {
         if (data && data.value) setYearlyDiscount(parseInt(data.value));
