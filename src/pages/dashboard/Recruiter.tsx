@@ -1058,7 +1058,8 @@ export const ReminderSystem = ({
             <button type="button" onClick={triggerRejectionReason} className="btn-reminder" style={{ background: "#dc2626", color: "#fff" }}>Rejected</button>
             <button type="button" onClick={() => handleOutcomeAction("Joined")} className="btn-reminder" style={{ background: "#2563eb", color: "#fff" }}>Joined</button>
             <button type="button" onClick={() => handleOutcomeAction("Process To Joining")} className="btn-reminder" style={{ background: "#0f172a", color: "#fff" }}>Process To Joining</button>
-            <button type="button" onClick={triggerNotInterestedReason} className="btn-reminder" style={{ background: "#fee2e2", color: "#dc2626", gridColumn: "span 2" }}>Not Interested</button>
+            <button type="button" onClick={() => updateReminder(active.id, { triggerAt: Date.now() + 4 * 60 * 60 * 1000 })} className="btn-reminder" style={{ background: "#f1f5f9", color: "#475569" }}>Revert Later</button>
+            <button type="button" onClick={triggerNotInterestedReason} className="btn-reminder" style={{ background: "#fee2e2", color: "#dc2626" }}>Not Interested</button>
           </>
         );
 

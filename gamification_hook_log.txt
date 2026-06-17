@@ -293,3 +293,7 @@
 [2026-06-16T17:12:55.237Z] Candidate 44 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 504.3
 [2026-06-16T17:12:55.242Z] Candidate 44 | isNew: true | Unique phone count: 31, milestoneIndex: 0
 [2026-06-16T17:12:55.251Z] Candidate 44 | isNew: true | Team unique phone count: 31, teamMilestoneIndex: 0
+[2026-06-17T06:36:17.992Z] Candidate 44 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-17T06:36:18.011Z] Candidate 44 | isNew: false | Target User ID for points: 37
+[2026-06-17T06:36:18.012Z] Candidate 44 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
+[2026-06-17T06:36:18.041Z] Candidate 44 | isNew: false | Successfully awarded 70 coins for go_for_interview to user 37. New total: 574.3
