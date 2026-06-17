@@ -6,20 +6,48 @@ dotenv.config();
 
 let isDbConnected = false;
 
-const sequelize = new Sequelize("fast_rms", "root", "", {
-    host: "127.0.0.1",
-    dialect: "mysql",
-    logging: false, // Set to true if you want to see SQL queries
-    dialectOptions: {
-        connectTimeout: 5000 // 5 seconds timeout
-    },
-    pool: {
-        max: 50,
-        min: 2,
-        acquire: 15000,
-        idle: 10000
-    }
-});
+const DB_URL = process.env.DATABASE_URL;
+
+let sequelize;
+if (DB_URL) {
+    sequelize = new Sequelize(DB_URL, {
+        dialect: "mysql",
+        logging: false,
+        dialectOptions: {
+            connectTimeout: 15000,
+            ssl: {
+                rejectUnauthorized: false
+            }
+        },
+        pool: {
+            max: 50,
+            min: 2,
+            acquire: 30000,
+            idle: 10000
+        }
+    });
+} else {
+    sequelize = new Sequelize(
+        process.env.DB_NAME || "fast_rms",
+        process.env.DB_USER || "root",
+        process.env.DB_PASSWORD || "",
+        {
+            host: process.env.DB_HOST || "127.0.0.1",
+            port: process.env.DB_PORT || 3306,
+            dialect: "mysql",
+            logging: false,
+            dialectOptions: {
+                connectTimeout: 5000
+            },
+            pool: {
+                max: 50,
+                min: 2,
+                acquire: 15000,
+                idle: 10000
+            }
+        }
+    );
+}
 
 const testHostPort = (host, port = 3306, timeout = 500) => {
     return new Promise((resolve, reject) => {
@@ -41,6 +69,18 @@ const testHostPort = (host, port = 3306, timeout = 500) => {
 };
 
 const connectDB = async () => {
+    if (process.env.DATABASE_URL || process.env.DB_HOST) {
+        try {
+            await sequelize.authenticate();
+            isDbConnected = true;
+            console.log("MySQL Connected via Environment Variables");
+        } catch (err) {
+            isDbConnected = false;
+            console.error("MySQL Connection via Environment Variables Failed:", err.message);
+        }
+        return;
+    }
+
     const candidateHosts = ["127.0.0.1", "localhost", "::1"];
     let workingHost = null;
     let workingPort = 3306;
