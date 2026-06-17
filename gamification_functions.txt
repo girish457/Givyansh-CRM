@@ -1,0 +1,336 @@
+--- runDailyRecruiterTLChecks ---
+async function runDailyRecruiterTLChecks(userId, role, companyId) {
+    const PointHistory = sequelize.models.PointHistory;
+    const UserMetrics = sequelize.models.UserMetrics;
+    const User = sequelize.models.User;
+    const economy = await getEconomyConfig();
+    
+    // We check the last 5 days to ensure we catch up on any missed days
+    const today = new Date();
+    for (let offset = 1; offset <= 5; offset++) {
+        const checkDate = new Date();
+        checkDate.setDate(today.getDate() - offset);
+        const dateStr = checkDate.toISOString().split('T')[0];
+
+        const startOfDay = new Date(dateStr + "T00:00:00Z");
+        const endOfDay = new Date(dateStr + "T23:59:59Z");
+
+        // TL checks (for tl role)
+        if (role === "tl") {
+            const teamRecruiters = await User.findAll({
+                where: { reportingTo: userId, role: "recruiter" }
+            });
+            if (teamRecruiters.length > 0) {
+                const teamIds = teamRecruiters.map(r => r.id);
+                let activeCount = 0;
+
+                for (const rId of teamIds) {
+                    const actions = await PointHistory.count({
+                        where: {
+                            userId: rId,
+                            createdAt: { [Op.between]: [startOfDay, endOfDay] }
+                        }
+                    });
+                    if (actions >= 20) {
+                        activeCount++;
+                        // Award active recruiter points per active recruiter to TL
+                        const activeRecruiterPoints = economy.activeRecruiterDay || 1;
+                        const uniqueKey = `tl_active_recruiter_${userId}_${rId}_${dateStr}`;
+                        const exists = await PointHistory.findOne({ where: { userId, reason: uniqueKey } });
+                        if (!exists) {
+                            await PointHistory.create({
+                                userId,
+                                actionType: "tl_active_recruiter",
+                                statusName: "Active Recruiter",
+                                pointsAwarded: activeRecruiterPoints,
+                                reason: uniqueKey
+                            });
+                            const [metrics] = await UserMetrics.findOrCreate({ where: { userId } });
+                            metrics.totalCoins += activeRecruiterPoints;
+                            await metrics.save();
+                        }
+                    }
+                }
+
+                // Check if 80%+ of team is active
+                if (activeCount / teamRecruiters.length >= 0.8) {
+                    const eightyPercentPoints = economy.eightyPercentActive || 1;
+                    const uniqueKey = `tl_team_80_percent_${userId}_${dateStr}`;
+                    const exists = await PointHistory.findOne({ where: { userId, reason: uniqueKey } });
+                    if (!exists) {
+                        await PointHistory.create({
+                            userId,
+                            actionType: "tl_team_80_percent",
+                            statusName: "80% Team Active",
+                            pointsAwarded: eightyPercentPoints,
+                            reason: uniqueKey
+                        });
+                        const [metrics] = await UserMetrics.findOrCreate({ where: { userId } });
+                        metrics.totalCoins += eightyPercentPoints;
+                        await metrics.save();
+                    }
+                }
+            }
+        }
+    }
+}
+
+async function runMonthlyGamificationCalculations(userId, role, companyId) {
+    const PointHistory = sequelize.models.PointHistory;
+    const UserMetrics = sequelize.models.UserMetrics;
+    const User = sequelize.models.User;
+    const Attendance = sequelize.models.Attendance;
+    const Shift = sequelize.models.Shift;
+    const economy = await getEconomyConfig();
+
+    const now = new Date();
+    // Get previous month date
+    const prevMonthDate = new Date();
+    prevMonthDate.setMonth(now.getMonth() - 1);
+    const prevYear = prevMonthDate.getFullYear();
+    const prevMonth = prevMonthDate.getMonth() + 1; // 1-indexed
+    const monthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+
+    const monthlyKey = `monthly_payout_${userId}_${monthStr}`;
+    // Check if already processed
+    const exists = await PointHistory.findOne({ where: { userId, reason: monthlyKey } });
+    if (exists) return; // Already processed
+
+    // Define start and end of previous month
+    const startOfPrevMonthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+    const lastDay = new Date(prevYear, prevMonth, 0).getDate();
+    const endOfPrevMonthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    let pointsAwarded = 0;
+    let logReasons = [];
+
+    // 1. Recruiter monthly checks
+    if (role === "recruiter") {
+        const presentDays = await Attendance.count({
+            where: { userId, status: "present", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        });
+        const absentDays = await Attendance.count({
+            where: { userId, status: "absent", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        });
+
+        // Rule 1: 26+ present days -> +30 points
+        if (presentDays >= 26) {
+            const p = economy.monthly26DaysPresent !== undefined ? economy.monthly26DaysPresent : 30;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (26+ Days Present)`);
+        }
+        // Rule 2: More than 4 absents -> -10 points
+        if (absentDays > 4) {
+            const p = economy.monthlyAbsentPenalty !== undefined ? economy.monthlyAbsentPenalty : -10;
+            pointsAwarded += p;
+            logReasons.push(`${p} (More than 4 Absents)`);
+        }
+
+        // Rule 3: Avg Work Hours >= 80% -> +40 points
+        const totalHours = await Attendance.sum("totalWorkingHours", {
+            where: { userId, date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        }) || 0;
+        const user = await User.findByPk(userId, { include: [{ model: Shift, as: "shift" }] });
+        const reqHoursPerDay = user && user.shift ? parseFloat(user.shift.requiredHours) : 8;
+        const totalRequiredHours = presentDays * reqHoursPerDay;
+        if (totalRequiredHours > 0 && (totalHours / totalRequiredHours) >= 0.8) {
+            const p = economy.monthlyAvgWorkHours !== undefined ? economy.monthlyAvgWorkHours : 40;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (Avg Work Hours >= 80%)`);
+        }
+
+        // Rule 4: Avg Overtime > 1.5hr -> +10 points
+        const totalOvertime = await Attendance.sum("totalOvertime", {
+            where: { userId, date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        }) || 0;
+        const avgOvertimeMins = presentDays > 0 ? (totalOvertime / presentDays) : 0;
+        if (avgOvertimeMins > 90) {
+            const p = economy.monthlyOvertime !== undefined ? economy.monthlyOvertime : 10;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (Avg Overtime > 1.5hr)`);
+        }
+
+        // Rule 5 & 6: Late / Early In average checks
+        const presentAttendances = await Attendance.findAll({
+            where: { userId, status: "present", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } },
+            include: [{ model: Shift, as: "shift" }]
+        });
+        let totalLateMins = 0;
+        let totalEarlyMins = 0;
+        let presentCount = 0;
+        presentAttendances.forEach(att => {
+            if (att.loginTime && att.shift) {
+                presentCount++;
+                const checkInDate = new Date(att.loginTime);
+                const [sh, sm] = att.shift.startTime.split(":").map(Number);
+                const shiftStartDate = new Date(checkInDate);
+                shiftStartDate.setHours(sh, sm, 0, 0);
+                const d
+--- runMonthlyGamificationCalculations ---
+async function runMonthlyGamificationCalculations(userId, role, companyId) {
+    const PointHistory = sequelize.models.PointHistory;
+    const UserMetrics = sequelize.models.UserMetrics;
+    const User = sequelize.models.User;
+    const Attendance = sequelize.models.Attendance;
+    const Shift = sequelize.models.Shift;
+    const economy = await getEconomyConfig();
+
+    const now = new Date();
+    // Get previous month date
+    const prevMonthDate = new Date();
+    prevMonthDate.setMonth(now.getMonth() - 1);
+    const prevYear = prevMonthDate.getFullYear();
+    const prevMonth = prevMonthDate.getMonth() + 1; // 1-indexed
+    const monthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+
+    const monthlyKey = `monthly_payout_${userId}_${monthStr}`;
+    // Check if already processed
+    const exists = await PointHistory.findOne({ where: { userId, reason: monthlyKey } });
+    if (exists) return; // Already processed
+
+    // Define start and end of previous month
+    const startOfPrevMonthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+    const lastDay = new Date(prevYear, prevMonth, 0).getDate();
+    const endOfPrevMonthStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    let pointsAwarded = 0;
+    let logReasons = [];
+
+    // 1. Recruiter monthly checks
+    if (role === "recruiter") {
+        const presentDays = await Attendance.count({
+            where: { userId, status: "present", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        });
+        const absentDays = await Attendance.count({
+            where: { userId, status: "absent", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        });
+
+        // Rule 1: 26+ present days -> +30 points
+        if (presentDays >= 26) {
+            const p = economy.monthly26DaysPresent !== undefined ? economy.monthly26DaysPresent : 30;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (26+ Days Present)`);
+        }
+        // Rule 2: More than 4 absents -> -10 points
+        if (absentDays > 4) {
+            const p = economy.monthlyAbsentPenalty !== undefined ? economy.monthlyAbsentPenalty : -10;
+            pointsAwarded += p;
+            logReasons.push(`${p} (More than 4 Absents)`);
+        }
+
+        // Rule 3: Avg Work Hours >= 80% -> +40 points
+        const totalHours = await Attendance.sum("totalWorkingHours", {
+            where: { userId, date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        }) || 0;
+        const user = await User.findByPk(userId, { include: [{ model: Shift, as: "shift" }] });
+        const reqHoursPerDay = user && user.shift ? parseFloat(user.shift.requiredHours) : 8;
+        const totalRequiredHours = presentDays * reqHoursPerDay;
+        if (totalRequiredHours > 0 && (totalHours / totalRequiredHours) >= 0.8) {
+            const p = economy.monthlyAvgWorkHours !== undefined ? economy.monthlyAvgWorkHours : 40;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (Avg Work Hours >= 80%)`);
+        }
+
+        // Rule 4: Avg Overtime > 1.5hr -> +10 points
+        const totalOvertime = await Attendance.sum("totalOvertime", {
+            where: { userId, date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+        }) || 0;
+        const avgOvertimeMins = presentDays > 0 ? (totalOvertime / presentDays) : 0;
+        if (avgOvertimeMins > 90) {
+            const p = economy.monthlyOvertime !== undefined ? economy.monthlyOvertime : 10;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (Avg Overtime > 1.5hr)`);
+        }
+
+        // Rule 5 & 6: Late / Early In average checks
+        const presentAttendances = await Attendance.findAll({
+            where: { userId, status: "present", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } },
+            include: [{ model: Shift, as: "shift" }]
+        });
+        let totalLateMins = 0;
+        let totalEarlyMins = 0;
+        let presentCount = 0;
+        presentAttendances.forEach(att => {
+            if (att.loginTime && att.shift) {
+                presentCount++;
+                const checkInDate = new Date(att.loginTime);
+                const [sh, sm] = att.shift.startTime.split(":").map(Number);
+                const shiftStartDate = new Date(checkInDate);
+                shiftStartDate.setHours(sh, sm, 0, 0);
+                const diffMins = Math.round((checkInDate.getTime() - shiftStartDate.getTime()) / 60000);
+                if (diffMins > 0) totalLateMins += diffMins;
+                else if (diffMins < 0) totalEarlyMins += Math.abs(diffMins);
+            }
+        });
+        const avgLate = presentCount > 0 ? (totalLateMins / presentCount) : 0;
+        const avgEarly = presentCount > 0 ? (totalEarlyMins / presentCount) : 0;
+
+        if (avgLate > 60) {
+            const p = economy.monthlyLatePenalty !== undefined ? economy.monthlyLatePenalty : -10;
+            pointsAwarded += p;
+            logReasons.push(`${p} (Avg Late In > 1hr)`);
+        }
+        if (avgEarly > 60) {
+            const p = economy.monthlyEarlyBonus !== undefined ? economy.monthlyEarlyBonus : 10;
+            pointsAwarded += p;
+            logReasons.push(`+${p} (Avg Early In > 1hr)`);
+        }
+    }
+
+    // 2. TL monthly checks
+    if (role === "tl") {
+        const teamRecruiters = await User.findAll({
+            where: { reportingTo: userId, role: "recruiter" }
+        });
+        if (teamRecruiters.length > 0) {
+            const teamIds = teamRecruiters.map(r => r.id);
+            
+            // Rule 1: -20 point if team avg late > 1hr
+            const presentAttendances = await Attendance.findAll({
+                where: { userId: teamIds, status: "present", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } },
+                include: [{ model: Shift, as: "shift" }]
+            });
+            let totalLateMins = 0;
+            let presentCount = 0;
+            presentAttendances.forEach(att => {
+                if (att.loginTime && att.shift) {
+                    presentCount++;
+                    const checkInDate = new Date(att.loginTime);
+                    const [sh, sm] = att.shift.startTime.split(":").map(Number);
+                    const shiftStartDate = new Date(checkInDate);
+                    shiftStartDate.setHours(sh, sm, 0, 0);
+                    const diffMins = Math.round((checkInDate.getTime() - shiftStartDate.getTime()) / 60000);
+                    if (diffMins > 0) totalLateMins += diffMins;
+                }
+            });
+            const avgLate = presentCount > 0 ? (totalLateMins / presentCount) : 0;
+            if (avgLate > 60) {
+                const p = economy.teamAvgLatePenalty !== undefined ? economy.teamAvgLatePenalty : -20;
+                pointsAwarded += p;
+                logReasons.push(`${p} (Team Avg Late > 1hr)`);
+            }
+
+            // Rule 2: -20 point if attendance poor (avg absent > 4)
+            const totalTeamAbsents = await Attendance.count({
+                where: { userId: teamIds, status: "absent", date: { [Op.between]: [startOfPrevMonthStr, endOfPrevMonthStr] } }
+            });
+            const avgAbsents = totalTeamAbsents / teamRecruiters.length;
+            if (avgAbsents > 4) {
+                const p = economy.teamPoorAttendancePenalty !== undefined ? economy.teamPoorAttendancePenalty : -20;
+                pointsAwarded += p;
+                logReasons.push(`${p} (Team Avg Absents > 4)`);
+            }
+        }
+    }
+
+    // Create history record and add coins if points != 0
+    if (pointsAwarded !== 0 || logReasons.length > 0) {
+        await PointHistory.create({
+            userId,
+            actionType: "monthly_attendance_payout",
+            statusName: "Monthly Attendance Summary",
+            pointsAwarded,
+            reason: monthlyKey,
+            reasonDetails: logReasons.join(", ") || "Monthly review completed"
+        });
+        const [met

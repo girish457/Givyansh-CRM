@@ -1,0 +1,295 @@
+[2026-06-14T12:36:00.278Z] Candidate 27 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-14T12:36:00.284Z] Candidate 27 | isNew: true | Evaluated Action: register with points: 0.3
+[2026-06-14T12:36:00.287Z] Candidate 27 | isNew: true | Target User ID for points: 37
+[2026-06-14T12:36:00.305Z] Candidate 27 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 0.3
+[2026-06-14T12:36:00.308Z] Candidate 27 | isNew: true | Unique phone count: 20, milestoneIndex: 0
+[2026-06-14T12:36:00.315Z] Candidate 27 | isNew: true | Team unique phone count: 20, teamMilestoneIndex: 0
+[2026-06-14T12:43:12.959Z] Candidate 28 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-14T12:43:12.969Z] Candidate 28 | isNew: true | Evaluated Action: register with points: 0.3
+[2026-06-14T12:43:12.976Z] Candidate 28 | isNew: true | Target User ID for points: 37
+[2026-06-14T12:43:13.005Z] Candidate 28 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 0.8999999999999999
+[2026-06-14T12:43:13.015Z] Candidate 28 | isNew: true | Unique phone count: 21, milestoneIndex: 0
+[2026-06-14T12:43:13.023Z] Candidate 28 | isNew: true | Team unique phone count: 21, teamMilestoneIndex: 0
+[2026-06-14T12:43:49.360Z] Candidate 27 | isNew: false | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-14T12:43:49.362Z] Candidate 27 | isNew: false | No actionable status found (remarks/cvStatus did not match any gamified event).
+[2026-06-14T12:51:15.862Z] Candidate 28 | isNew: false | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-14T12:51:15.871Z] Candidate 28 | isNew: false | No actionable status found (remarks/cvStatus did not match any gamified event).
+[2026-06-14T12:53:16.205Z] Candidate 29 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-14T12:53:16.210Z] Candidate 29 | isNew: true | Evaluated Action: register with points: 0.3
+[2026-06-14T12:53:16.211Z] Candidate 29 | isNew: true | Target User ID for points: 37
+[2026-06-14T12:53:16.227Z] Candidate 29 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 1.5
+[2026-06-14T12:53:16.232Z] Candidate 29 | isNew: true | Unique phone count: 22, milestoneIndex: 0
+[2026-06-14T12:53:16.248Z] Candidate 29 | isNew: true | Team unique phone count: 22, teamMilestoneIndex: 0
+[2026-06-14T13:01:39.027Z] Candidate 29 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-14T13:01:39.034Z] Candidate 29 | isNew: false | Evaluated Action: go_for_interview with points: 7
+[2026-06-14T13:01:39.039Z] Candidate 29 | isNew: false | Target User ID for points: 37
+[2026-06-14T13:01:39.057Z] Candidate 29 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 8.8
+[2026-06-14T13:02:03.510Z] Candidate 28 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-14T13:02:03.516Z] Candidate 28 | isNew: false | Evaluated Action: go_for_interview with points: 7
+[2026-06-14T13:02:03.520Z] Candidate 28 | isNew: false | Target User ID for points: 37
+[2026-06-14T13:02:03.540Z] Candidate 28 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 22.8
+[2026-06-14T13:03:09.931Z] Candidate 27 | isNew: false | Starting gamification points evaluation. Remarks: "Not Interested", cvStatus: "Shared", status: "New"
+[2026-06-14T13:03:09.956Z] Candidate 27 | isNew: false | Evaluated Action: not_interested with points: -2
+[2026-06-14T13:03:09.963Z] Candidate 27 | isNew: false | Target User ID for points: 37
+[2026-06-14T13:03:10.039Z] Candidate 27 | isNew: false | Successfully awarded -2 coins for not_interested to user 37. New total: 27.8
+[2026-06-15T15:12:46.981Z] Candidate 29 | isNew: false | Starting gamification points evaluation. Remarks: "Selected", cvStatus: "Shared", status: "New"
+[2026-06-15T15:12:46.995Z] Candidate 29 | isNew: false | Evaluated Action: selected with points: 10
+[2026-06-15T15:12:47.000Z] Candidate 29 | isNew: false | Target User ID for points: 37
+[2026-06-15T15:12:47.021Z] Candidate 29 | isNew: false | Successfully awarded 10 coins for selected to user 37. New total: 35.8
+[2026-06-15T15:12:52.796Z] Candidate 29 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-15T15:12:52.805Z] Candidate 29 | isNew: false | Evaluated Action: processing_for_joining with points: 12
+[2026-06-15T15:12:52.808Z] Candidate 29 | isNew: false | Target User ID for points: 37
+[2026-06-15T15:12:52.835Z] Candidate 29 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 57.8
+[2026-06-15T15:13:14.273Z] Candidate 28 | isNew: false | Starting gamification points evaluation. Remarks: "Rejected", cvStatus: "Shared", status: "New"
+[2026-06-15T15:13:14.275Z] Candidate 28 | isNew: false | Evaluated Action: rejected with points: -7
+[2026-06-15T15:13:14.277Z] Candidate 28 | isNew: false | Target User ID for points: 37
+[2026-06-15T15:13:14.284Z] Candidate 28 | isNew: false | Successfully awarded -7 coins for rejected to user 37. New total: 50.8
+[2026-06-15T15:33:58.033Z] Candidate 30 | isNew: true | Starting gamification points evaluation. Remarks: "Interested", cvStatus: "Shared", status: "New"
+[2026-06-15T15:33:58.039Z] Candidate 30 | isNew: true | Evaluated Action: register with points: 0.3
+[2026-06-15T15:33:58.041Z] Candidate 30 | isNew: true | Target User ID for points: 37
+[2026-06-15T15:33:58.084Z] Candidate 30 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 44.099999999999994
+[2026-06-15T15:33:58.091Z] Candidate 30 | isNew: true | Unique phone count: 23, milestoneIndex: 0
+[2026-06-15T15:33:58.108Z] Candidate 30 | isNew: true | Team unique phone count: 23, teamMilestoneIndex: 0
+[2026-06-15T15:41:12.309Z] Candidate 30 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-15T15:41:12.333Z] Candidate 30 | isNew: false | Evaluated Action: go_for_interview with points: 7
+[2026-06-15T15:41:12.341Z] Candidate 30 | isNew: false | Target User ID for points: 37
+[2026-06-15T15:41:12.450Z] Candidate 30 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 51.4
+[2026-06-15T15:53:24.658Z] Candidate 26 | isNew: false | Starting gamification points evaluation. Remarks: "Joined", cvStatus: "Shared", status: "New"
+[2026-06-15T15:53:24.672Z] Candidate 26 | isNew: false | Evaluated Action: joined with points: 18
+[2026-06-15T15:53:24.678Z] Candidate 26 | isNew: false | Target User ID for points: 38
+[2026-06-15T15:53:24.752Z] Candidate 26 | isNew: false | Successfully awarded 18 coins for joined to user 38. New total: 28
+[2026-06-15T16:21:49.008Z] Candidate 31 | isNew: true | Starting gamification points evaluation. Remarks: "Interested", cvStatus: "Shared", status: "New"
+[2026-06-15T16:21:49.022Z] Candidate 31 | isNew: true | Evaluated Action: register with points: 0.3
+[2026-06-15T16:21:49.026Z] Candidate 31 | isNew: true | Target User ID for points: 37
+[2026-06-15T16:21:49.052Z] Candidate 31 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 58.699999999999996
+[2026-06-15T16:21:49.057Z] Candidate 31 | isNew: true | Unique phone count: 24, milestoneIndex: 0
+[2026-06-15T16:21:49.074Z] Candidate 31 | isNew: true | Team unique phone count: 24, teamMilestoneIndex: 0
+[2026-06-15T16:22:16.755Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-15T16:22:16.763Z] Candidate 31 | isNew: false | Evaluated Action: go_for_interview with points: 7
+[2026-06-15T16:22:16.767Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-15T16:22:16.786Z] Candidate 31 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 65.7
+[2026-06-15T16:23:29.322Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Interested", cvStatus: "Shared", status: "New"
+[2026-06-15T16:23:29.326Z] Candidate 31 | isNew: false | Evaluated Action: interested with points: 5
+[2026-06-15T16:23:29.327Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-15T16:23:29.345Z] Candidate 31 | isNew: false | Successfully awarded 5 coins for interested to user 37. New total: 70.7
+[2026-06-15T16:24:03.374Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-15T16:24:03.377Z] Candidate 31 | isNew: false | Evaluated Action: connected with points: 3
+[2026-06-15T16:24:03.380Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-15T16:24:03.396Z] Candidate 31 | isNew: false | Successfully awarded 3 coins for connected to user 37. New total: 73.7
+[2026-06-15T16:24:26.643Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Interested", cvStatus: "Shared", status: "New"
+[2026-06-15T16:24:26.647Z] Candidate 31 | isNew: false | Evaluated Action: interested with points: 5
+[2026-06-15T16:24:26.649Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-15T16:24:26.657Z] Candidate 31 | isNew: false | Deduplication triggered: actionType "interested" was already awarded previously for this candidate. Applying backwards revert penalty.
+[2026-06-15T16:24:26.668Z] Candidate 31 | isNew: false | Backwards penalty applied. Metrics updated.
+[2026-06-15T16:48:40.673Z] Candidate 32 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-15T16:48:40.699Z] Candidate 32 | isNew: true | Evaluated Action: register with points: 0.3
+[2026-06-15T16:48:40.703Z] Candidate 32 | isNew: true | Target User ID for points: 38
+[2026-06-15T16:48:40.775Z] Candidate 32 | isNew: true | Successfully awarded 0.3 coins for register to user 38. New total: 46.3
+[2026-06-15T16:48:40.786Z] Candidate 32 | isNew: true | Unique phone count: 2, milestoneIndex: 0
+[2026-06-15T16:48:40.815Z] Candidate 32 | isNew: true | Team unique phone count: 0, teamMilestoneIndex: 0
+[2026-06-15T16:52:43.846Z] Candidate 33 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "undefined", status: "New"
+[2026-06-15T16:52:43.864Z] Candidate 33 | isNew: true | Target User ID for points: 6
+[2026-06-15T16:52:43.867Z] Candidate 33 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-15T16:52:43.891Z] Candidate 33 | isNew: true | Successfully awarded 0.3 coins for register to user 6. New total: 0.3
+[2026-06-15T16:52:43.894Z] Candidate 33 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-15T16:52:43.905Z] Candidate 33 | isNew: true | Successfully awarded 0.2 coins for connected to user 6. New total: 0.5
+[2026-06-15T16:52:43.911Z] Candidate 33 | isNew: true | Unique phone count: 1, milestoneIndex: 0
+[2026-06-15T16:52:43.920Z] Candidate 33 | isNew: true | Team unique phone count: 1, teamMilestoneIndex: 0
+[2026-06-15T16:52:43.928Z] Candidate 34 | isNew: true | Starting gamification points evaluation. Remarks: "Not Connected", cvStatus: "undefined", status: "New"
+[2026-06-15T16:52:43.931Z] Candidate 34 | isNew: true | Target User ID for points: 6
+[2026-06-15T16:52:43.932Z] Candidate 34 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-15T16:52:43.943Z] Candidate 34 | isNew: true | Successfully awarded 0.3 coins for register to user 6. New total: 0.8
+[2026-06-15T16:52:43.946Z] Candidate 34 | isNew: true | Evaluating Action inside loop: not_connected with points: -0.3
+[2026-06-15T16:52:43.956Z] Candidate 34 | isNew: true | Successfully awarded -0.3 coins for not_connected to user 6. New total: 0.5
+[2026-06-15T16:52:43.960Z] Candidate 34 | isNew: true | Unique phone count: 2, milestoneIndex: 0
+[2026-06-15T16:52:43.966Z] Candidate 34 | isNew: true | Team unique phone count: 2, teamMilestoneIndex: 0
+[2026-06-15T17:04:46.163Z] Candidate 35 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-15T17:04:46.993Z] Candidate 35 | isNew: true | Target User ID for points: 38
+[2026-06-15T17:04:47.004Z] Candidate 35 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-15T17:04:47.135Z] Candidate 35 | isNew: true | Successfully awarded 0.3 coins for register to user 38. New total: 46.599999999999994
+[2026-06-15T17:04:47.151Z] Candidate 35 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-15T17:04:47.295Z] Candidate 35 | isNew: true | Successfully awarded 0.2 coins for connected to user 38. New total: 46.800000000000004
+[2026-06-15T17:04:47.510Z] Candidate 35 | isNew: true | Unique phone count: 3, milestoneIndex: 0
+[2026-06-15T17:04:47.596Z] Candidate 35 | isNew: true | Team unique phone count: 0, teamMilestoneIndex: 0
+[2026-06-16T06:05:32.962Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T06:05:33.003Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-16T06:05:33.007Z] Candidate 31 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 7
+[2026-06-16T06:05:33.012Z] Candidate 31 | isNew: false | Deduplication/Backwards triggered: actionType "go_for_interview" was either awarded previously or candidate has reached a higher status. Applying backwards revert penalty.
+[2026-06-16T06:05:33.026Z] Candidate 31 | isNew: false | Backwards penalty applied. Metrics updated.
+[2026-06-16T06:05:52.780Z] Candidate 30 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T06:05:52.785Z] Candidate 30 | isNew: false | Target User ID for points: 37
+[2026-06-16T06:05:52.788Z] Candidate 30 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T06:05:52.805Z] Candidate 30 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 83.7
+[2026-06-16T06:47:31.290Z] Candidate 36 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T06:47:31.296Z] Candidate 36 | isNew: true | Target User ID for points: 37
+[2026-06-16T06:47:31.297Z] Candidate 36 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T06:47:31.318Z] Candidate 36 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 84
+[2026-06-16T06:47:31.320Z] Candidate 36 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T06:47:31.342Z] Candidate 36 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 84.2
+[2026-06-16T06:47:31.351Z] Candidate 36 | isNew: true | Unique phone count: 24, milestoneIndex: 0
+[2026-06-16T06:47:31.368Z] Candidate 36 | isNew: true | Team unique phone count: 24, teamMilestoneIndex: 0
+[2026-06-16T06:48:06.223Z] Candidate 36 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T06:48:06.233Z] Candidate 36 | isNew: false | Target User ID for points: 37
+[2026-06-16T06:48:06.240Z] Candidate 36 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 7
+[2026-06-16T06:48:06.356Z] Candidate 36 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 91.2
+[2026-06-16T06:50:06.178Z] Candidate 37 | isNew: true | Starting gamification points evaluation. Remarks: "Interested", cvStatus: "Shared", status: "New"
+[2026-06-16T06:50:06.182Z] Candidate 37 | isNew: true | Target User ID for points: 37
+[2026-06-16T06:50:06.186Z] Candidate 37 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T06:50:06.195Z] Candidate 37 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 91.5
+[2026-06-16T06:50:06.196Z] Candidate 37 | isNew: true | Evaluating Action inside loop: interested with points: 0.3
+[2026-06-16T06:50:06.202Z] Candidate 37 | isNew: true | Successfully awarded 0.3 coins for interested to user 37. New total: 91.8
+[2026-06-16T06:50:06.206Z] Candidate 37 | isNew: true | Unique phone count: 25, milestoneIndex: 0
+[2026-06-16T06:50:06.209Z] Candidate 37 | isNew: true | Team unique phone count: 25, teamMilestoneIndex: 0
+[2026-06-16T06:50:11.529Z] Candidate 37 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T06:50:11.538Z] Candidate 37 | isNew: false | Target User ID for points: 37
+[2026-06-16T06:50:11.540Z] Candidate 37 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 7
+[2026-06-16T06:50:11.565Z] Candidate 37 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 98.8
+[2026-06-16T06:51:07.458Z] Candidate 38 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T06:51:07.461Z] Candidate 38 | isNew: true | Target User ID for points: 37
+[2026-06-16T06:51:07.462Z] Candidate 38 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T06:51:07.478Z] Candidate 38 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 99.1
+[2026-06-16T06:51:07.480Z] Candidate 38 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T06:51:07.488Z] Candidate 38 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 99.3
+[2026-06-16T06:51:07.490Z] Candidate 38 | isNew: true | Unique phone count: 26, milestoneIndex: 0
+[2026-06-16T06:51:07.496Z] Candidate 38 | isNew: true | Team unique phone count: 26, teamMilestoneIndex: 0
+[2026-06-16T06:52:05.574Z] Candidate 38 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T06:52:05.579Z] Candidate 38 | isNew: false | Target User ID for points: 37
+[2026-06-16T06:52:05.581Z] Candidate 38 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 7
+[2026-06-16T06:52:05.590Z] Candidate 38 | isNew: false | Successfully awarded 7 coins for go_for_interview to user 37. New total: 106.3
+[2026-06-16T07:19:27.964Z] Candidate 39 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T07:19:28.031Z] Candidate 39 | isNew: true | Target User ID for points: 37
+[2026-06-16T07:19:28.098Z] Candidate 39 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T07:19:28.182Z] Candidate 39 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 106.6
+[2026-06-16T07:19:28.187Z] Candidate 39 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T07:19:28.212Z] Candidate 39 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 106.8
+[2026-06-16T07:19:28.225Z] Candidate 39 | isNew: true | Unique phone count: 27, milestoneIndex: 0
+[2026-06-16T07:19:28.259Z] Candidate 39 | isNew: true | Team unique phone count: 27, teamMilestoneIndex: 0
+[2026-06-16T07:20:05.395Z] Candidate 39 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T07:20:05.399Z] Candidate 39 | isNew: false | Target User ID for points: 37
+[2026-06-16T07:20:05.400Z] Candidate 39 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 25
+[2026-06-16T07:20:05.416Z] Candidate 39 | isNew: false | Successfully awarded 25 coins for go_for_interview to user 37. New total: 131.8
+[2026-06-16T07:49:42.393Z] Candidate 40 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T07:49:42.399Z] Candidate 40 | isNew: true | Target User ID for points: 37
+[2026-06-16T07:49:42.400Z] Candidate 40 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T07:49:42.408Z] Candidate 40 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 132.10000000000002
+[2026-06-16T07:49:42.409Z] Candidate 40 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T07:49:42.419Z] Candidate 40 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 132.29999999999998
+[2026-06-16T07:49:42.423Z] Candidate 40 | isNew: true | Unique phone count: 28, milestoneIndex: 0
+[2026-06-16T07:49:42.428Z] Candidate 40 | isNew: true | Team unique phone count: 28, teamMilestoneIndex: 0
+[2026-06-16T07:51:17.921Z] Candidate 40 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T07:51:17.952Z] Candidate 40 | isNew: false | Target User ID for points: 37
+[2026-06-16T07:51:17.956Z] Candidate 40 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 25
+[2026-06-16T07:51:17.977Z] Candidate 40 | isNew: false | Successfully awarded 25 coins for go_for_interview to user 37. New total: 157.3
+[2026-06-16T07:55:28.275Z] Candidate 41 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T07:55:28.284Z] Candidate 41 | isNew: true | Target User ID for points: 37
+[2026-06-16T07:55:28.285Z] Candidate 41 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T07:55:28.303Z] Candidate 41 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 157.60000000000002
+[2026-06-16T07:55:28.305Z] Candidate 41 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T07:55:28.314Z] Candidate 41 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 157.79999999999998
+[2026-06-16T07:55:28.317Z] Candidate 41 | isNew: true | Unique phone count: 29, milestoneIndex: 0
+[2026-06-16T07:55:28.325Z] Candidate 41 | isNew: true | Team unique phone count: 29, teamMilestoneIndex: 0
+[2026-06-16T07:56:18.915Z] Candidate 41 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T07:56:18.923Z] Candidate 41 | isNew: false | Target User ID for points: 37
+[2026-06-16T07:56:18.925Z] Candidate 41 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
+[2026-06-16T07:56:18.945Z] Candidate 41 | isNew: false | Successfully awarded 70 coins for go_for_interview to user 37. New total: 227.8
+[2026-06-16T08:55:24.696Z] Candidate 42 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T08:55:24.704Z] Candidate 42 | isNew: true | Target User ID for points: 37
+[2026-06-16T08:55:24.705Z] Candidate 42 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T08:55:24.727Z] Candidate 42 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 228.10000000000002
+[2026-06-16T08:55:24.728Z] Candidate 42 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T08:55:24.744Z] Candidate 42 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 228.29999999999998
+[2026-06-16T08:55:24.754Z] Candidate 42 | isNew: true | Unique phone count: 30, milestoneIndex: 0
+[2026-06-16T08:55:24.759Z] Candidate 42 | isNew: true | Team unique phone count: 30, teamMilestoneIndex: 0
+[2026-06-16T08:56:16.247Z] Candidate 42 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T08:56:16.254Z] Candidate 42 | isNew: false | Target User ID for points: 37
+[2026-06-16T08:56:16.258Z] Candidate 42 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
+[2026-06-16T08:56:16.277Z] Candidate 42 | isNew: false | Successfully awarded 70 coins for go_for_interview to user 37. New total: 298.3
+[2026-06-16T08:57:30.608Z] Candidate 43 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T08:57:30.612Z] Candidate 43 | isNew: true | Target User ID for points: 37
+[2026-06-16T08:57:30.615Z] Candidate 43 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T08:57:30.644Z] Candidate 43 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 298.6
+[2026-06-16T08:57:30.647Z] Candidate 43 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T08:57:30.667Z] Candidate 43 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 298.8
+[2026-06-16T08:57:30.672Z] Candidate 43 | isNew: true | Unique phone count: 31, milestoneIndex: 0
+[2026-06-16T08:57:30.688Z] Candidate 43 | isNew: true | Team unique phone count: 31, teamMilestoneIndex: 0
+[2026-06-16T08:58:06.167Z] Candidate 43 | isNew: false | Starting gamification points evaluation. Remarks: "Go For Interview", cvStatus: "Shared", status: "New"
+[2026-06-16T08:58:06.171Z] Candidate 43 | isNew: false | Target User ID for points: 37
+[2026-06-16T08:58:06.176Z] Candidate 43 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
+[2026-06-16T08:58:06.194Z] Candidate 43 | isNew: false | Successfully awarded 70 coins for go_for_interview to user 37. New total: 368.8
+[2026-06-16T11:09:25.126Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Selected", cvStatus: "Shared", status: "New"
+[2026-06-16T11:09:25.147Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:09:25.148Z] Candidate 31 | isNew: false | Evaluating Action inside loop: selected with points: 10
+[2026-06-16T11:09:25.348Z] Candidate 31 | isNew: false | Successfully awarded 10 coins for selected to user 37. New total: 378.8
+[2026-06-16T11:09:30.397Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T11:09:30.404Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:09:30.406Z] Candidate 31 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T11:09:30.425Z] Candidate 31 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 390.8
+[2026-06-16T11:26:47.717Z] Candidate 42 | isNew: false | Starting gamification points evaluation. Remarks: "Selected", cvStatus: "Shared", status: "New"
+[2026-06-16T11:26:47.725Z] Candidate 42 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:26:47.726Z] Candidate 42 | isNew: false | Evaluating Action inside loop: selected with points: 10
+[2026-06-16T11:26:47.734Z] Candidate 42 | isNew: false | Successfully awarded 10 coins for selected to user 37. New total: 400.8
+[2026-06-16T11:27:49.423Z] Candidate 42 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T11:27:49.430Z] Candidate 42 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:27:49.433Z] Candidate 42 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T11:27:49.467Z] Candidate 42 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 412.8
+[2026-06-16T11:48:18.807Z] Candidate 36 | isNew: false | Starting gamification points evaluation. Remarks: "Selected", cvStatus: "Shared", status: "New"
+[2026-06-16T11:48:18.819Z] Candidate 36 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:48:18.823Z] Candidate 36 | isNew: false | Evaluating Action inside loop: selected with points: 10
+[2026-06-16T11:48:18.858Z] Candidate 36 | isNew: false | Successfully awarded 10 coins for selected to user 37. New total: 422.8
+[2026-06-16T11:48:37.353Z] Candidate 36 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T11:48:37.361Z] Candidate 36 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:48:37.365Z] Candidate 36 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T11:48:37.391Z] Candidate 36 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 434.8
+[2026-06-16T11:52:20.512Z] Candidate 37 | isNew: false | Starting gamification points evaluation. Remarks: "Interview Rescheduled", cvStatus: "Shared", status: "New"
+[2026-06-16T11:52:20.522Z] Candidate 37 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:52:20.527Z] Candidate 37 | isNew: false | Evaluating Action inside loop: go_for_interview with points: 70
+[2026-06-16T11:52:20.549Z] Candidate 37 | isNew: false | Deduplication/Backwards triggered: actionType "go_for_interview" was either awarded previously or candidate has reached a higher status. Applying backwards revert penalty.
+[2026-06-16T11:52:20.572Z] Candidate 37 | isNew: false | Backwards penalty applied. Metrics updated.
+[2026-06-16T11:52:32.844Z] Candidate 38 | isNew: false | Starting gamification points evaluation. Remarks: "Not Interested", cvStatus: "Shared", status: "New"
+[2026-06-16T11:52:32.849Z] Candidate 38 | isNew: false | Target User ID for points: 37
+[2026-06-16T11:52:32.856Z] Candidate 38 | isNew: false | Evaluating Action inside loop: not_interested with points: -5
+[2026-06-16T11:52:32.871Z] Candidate 38 | isNew: false | Successfully awarded -5 coins for not_interested to user 37. New total: 428.8
+[2026-06-16T15:34:25.046Z] Candidate 43 | isNew: false | Starting gamification points evaluation. Remarks: "Joined", cvStatus: "Shared", status: "New"
+[2026-06-16T15:34:25.127Z] Candidate 43 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:34:25.145Z] Candidate 43 | isNew: false | Evaluating Action inside loop: joined with points: 18
+[2026-06-16T15:34:25.468Z] Candidate 43 | isNew: false | Successfully awarded 18 coins for joined to user 37. New total: 446.8
+[2026-06-16T15:34:39.838Z] Candidate 41 | isNew: false | Starting gamification points evaluation. Remarks: "Selected", cvStatus: "Shared", status: "New"
+[2026-06-16T15:34:39.848Z] Candidate 41 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:34:39.853Z] Candidate 41 | isNew: false | Evaluating Action inside loop: selected with points: 10
+[2026-06-16T15:34:39.886Z] Candidate 41 | isNew: false | Successfully awarded 10 coins for selected to user 37. New total: 456.8
+[2026-06-16T15:34:46.339Z] Candidate 41 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T15:34:46.361Z] Candidate 41 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:34:46.375Z] Candidate 41 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T15:34:46.499Z] Candidate 41 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 468.8
+[2026-06-16T15:35:12.440Z] Candidate 40 | isNew: false | Starting gamification points evaluation. Remarks: "Selected", cvStatus: "Shared", status: "New"
+[2026-06-16T15:35:12.449Z] Candidate 40 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:35:12.451Z] Candidate 40 | isNew: false | Evaluating Action inside loop: selected with points: 10
+[2026-06-16T15:35:12.518Z] Candidate 40 | isNew: false | Successfully awarded 10 coins for selected to user 37. New total: 478.8
+[2026-06-16T15:35:18.352Z] Candidate 40 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T15:35:18.389Z] Candidate 40 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:35:18.440Z] Candidate 40 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T15:35:18.628Z] Candidate 40 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 490.8
+[2026-06-16T15:35:27.859Z] Candidate 39 | isNew: false | Starting gamification points evaluation. Remarks: "Process To Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T15:35:27.869Z] Candidate 39 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:35:27.872Z] Candidate 39 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T15:35:27.954Z] Candidate 39 | isNew: false | Successfully awarded 12 coins for processing_for_joining to user 37. New total: 502.8
+[2026-06-16T15:35:58.765Z] Candidate 29 | isNew: false | Starting gamification points evaluation. Remarks: "Joined", cvStatus: "Shared", status: "New"
+[2026-06-16T15:35:58.820Z] Candidate 29 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:35:58.825Z] Candidate 29 | isNew: false | Evaluating Action inside loop: joined with points: 18
+[2026-06-16T15:35:58.963Z] Candidate 29 | isNew: false | Successfully awarded 18 coins for joined to user 37. New total: 520.8
+[2026-06-16T15:43:17.338Z] Candidate 30 | isNew: false | Starting gamification points evaluation. Remarks: "Dropped", cvStatus: "Shared", status: "New"
+[2026-06-16T15:43:17.344Z] Candidate 30 | isNew: false | Target User ID for points: 37
+[2026-06-16T15:43:17.354Z] Candidate 30 | isNew: false | Evaluating Action inside loop: dropped with points: -20
+[2026-06-16T16:29:30.290Z] Candidate 31 | isNew: false | Starting gamification points evaluation. Remarks: "Processing for Joining", cvStatus: "Shared", status: "New"
+[2026-06-16T16:29:30.296Z] Candidate 31 | isNew: false | Target User ID for points: 37
+[2026-06-16T16:29:30.298Z] Candidate 31 | isNew: false | Evaluating Action inside loop: processing_for_joining with points: 12
+[2026-06-16T16:29:30.305Z] Candidate 31 | isNew: false | Deduplication/Backwards triggered: actionType "processing_for_joining" was either awarded previously or candidate has reached a higher status. Applying backwards revert penalty.
+[2026-06-16T16:29:30.325Z] Candidate 31 | isNew: false | Backwards penalty applied. Metrics updated.
+[2026-06-16T17:12:55.195Z] Candidate 44 | isNew: true | Starting gamification points evaluation. Remarks: "Connected", cvStatus: "Shared", status: "New"
+[2026-06-16T17:12:55.199Z] Candidate 44 | isNew: true | Target User ID for points: 37
+[2026-06-16T17:12:55.204Z] Candidate 44 | isNew: true | Evaluating Action inside loop: register with points: 0.3
+[2026-06-16T17:12:55.223Z] Candidate 44 | isNew: true | Successfully awarded 0.3 coins for register to user 37. New total: 504.1
+[2026-06-16T17:12:55.225Z] Candidate 44 | isNew: true | Evaluating Action inside loop: connected with points: 0.2
+[2026-06-16T17:12:55.237Z] Candidate 44 | isNew: true | Successfully awarded 0.2 coins for connected to user 37. New total: 504.3
+[2026-06-16T17:12:55.242Z] Candidate 44 | isNew: true | Unique phone count: 31, milestoneIndex: 0
+[2026-06-16T17:12:55.251Z] Candidate 44 | isNew: true | Team unique phone count: 31, teamMilestoneIndex: 0

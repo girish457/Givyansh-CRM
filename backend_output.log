@@ -1,0 +1,44 @@
+Starting backend from Vite config at 2026-06-14T12:10:35.887Z...
+Probing MySQL loopback hosts on ports 3306 and 3307...
+Successfully reached host: 127.0.0.1 on port 3306
+MySQL Connected to fast_rms via Sequelize on 127.0.0.1:3306
+Probing MySQL loopback hosts on ports 3306 and 3307...
+Successfully reached host: 127.0.0.1 on port 3306
+MySQL Connected to fast_rms via Sequelize on 127.0.0.1:3306
+Database synced successfully
+Database synced successfully
+Server running on http://localhost:5000
+ERROR: node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at app.listen (c:\Users\goswa\OneDrive\Desktop\Fast RMS\Fast RMS\node_modules\express\lib\application.js:635:24)
+    at file:///c:/Users/goswa/OneDrive/Desktop/Fast%20RMS/Fast%20RMS/server/index.js:423:21
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+
+Node.js v24.13.0
+Backend exited with code 1
+[PUNCH_IN] UserID: 37 | Company: null | Date: 2026-06-14
+[PUNCH_IN] UserID: 37 | Company: null | Date: 2026-06-14
+[PUNCH_IN] UserID: 37 | Company: null | Date: 2026-06-14
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+[ATTENDANCE_HUB] Request for UserID: 37 by Role: recruiter (MyID: 37)
+Backend exited with code 1

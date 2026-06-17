@@ -1,0 +1,87 @@
+145:                     leadShareCount INT DEFAULT 0,
+616:             { name: "Demo Team Lead", email: "tl@fast-rms.com", role: "tl" },
+2083:         const tl = await User.create({ name: "Demo Team Lead", email: "givyansh77908136@gmail.com", password: dummyPassword, role: "tl", reportingTo: manager.id });
+3315:                 leadData: Math.min(100, Math.round(25 + (candidatesCount * 0.4) + baseSeed)),
+4261: // 2. Get all Team Leaders for Manager dropdown
+4262: app.get("/api/manager/team-leaders", authenticate, async (req, res) => {
+4297:                         return res.status(400).json({ error: `Team Lead (TL) limit reached. Maximum allowed TLs: ${company.maxTls || 20}.` });
+4329:                 if (!tl) return res.status(400).json({ error: "Invalid Team Leader selected" });
+4765:             const leadCategories = {};
+4823:                 // Lead Category Sourced
+4825:                 leadCategories[cat] = (leadCategories[cat] || 0) + 1;
+4878:                 leadCategories,
+5140:                     } else if (recentCandidate.dataType === "lead") {
+5141:                         currentActivity = "Working on Leads";
+5213:             const leadsAddedToday = await Candidate.count({
+5216:                     dataType: "lead",
+5285:                     leadsAddedToday,
+5410:         let totalLeadsAddedToday = 0;
+5416:         const leadCategoriesCounts = {};
+5417:         const recruiterLeadContributions = [];
+5479:             let tlLeadsTodaySum = 0;
+5550:                 // Leads today
+5551:                 const leadsAdded = await Candidate.count({
+5554:                         dataType: "lead",
+5558:                 tlLeadsTodaySum += leadsAdded;
+5559:                 totalLeadsAddedToday += leadsAdded;
+5608:                 // Lead category profiling
+5609:                 const leads = await Candidate.findAll({
+5610:                     where: { addedBy: recruiter.id, dataType: "lead", createdAt: { [Op.between]: [startOfToday, endOfToday] } },
+5613:                 leads.forEach(l => {
+5615:                     leadCategoriesCounts[cat] = (leadCategoriesCounts[cat] || 0) + 1;
+5618:                 if (leadsAdded > 0) {
+5619:                     recruiterLeadContributions.push({
+5621:                         count: leadsAdded
+5648:                         leadsAddedToday: leadsAdded,
+5682:                 designation: tl.designation || "Team Lead",
+5696:                     leadsAddedToday: tlLeadsTodaySum,
+5730:         // Aggregated Lead details
+5731:         const topCategories = Object.entries(leadCategoriesCounts)
+5778:                 totalLeadsAddedToday,
+5795:             leadDataAnalytics: {
+5796:                 totalLeads: totalLeadsAddedToday,
+5798:                 categoryCounts: leadCategoriesCounts,
+5799:                 recruiterContributions: recruiterLeadContributions
+5988:             const leads = recCandidates.filter(c => c.addedBy === u.id && c.dataType === "lead").length;
+6085:                     leads,
+6133:         const todayLeads = todayCandidates.filter(c => c.dataType === "lead").length;
+6150:             if (c.dataType === "lead") {
+6152:                     id: `lead_${c.id}`,
+6156:                     type: "lead_created",
+6157:                     message: `${creator} (${roleStr}) generated new lead for client '${c.clientName || 'N/A'}'`
+6301:         const bestRecruiter = rankedRecruiters[0] ? { name: rankedRecruiters[0].name, score: rankedRecruiters[0].performance.productivityScore, joinings: rankedRecruiters[0].performance.joinings, selections: rankedRecruiters[0].performance.selections, leads: rankedRecruiters[0].performance.leads, tasks: rankedRecruiters[0].tasks.completedTasks } : null;
+6302:         const bestTl = rankedTls[0] ? { name: rankedTls[0].name, score: rankedTls[0].performance.productivityScore, joinings: rankedTls[0].performance.joinings, selections: rankedTls[0].performance.selections, leads: rankedTls[0].performance.leads, tasks: rankedTls[0].tasks.completedTasks } : null;
+6303:         const bestManager = rankedManagers[0] ? { name: rankedManagers[0].name, score: rankedManagers[0].performance.productivityScore, joinings: rankedManagers[0].performance.joinings, selections: rankedManagers[0].performance.selections, leads: rankedManagers[0].performance.leads, tasks: rankedManagers[0].tasks.completedTasks } : null;
+6353:             const leads = allCandidates.filter(c => c.dataType === "lead" && c.createdAt >= dayStart && c.createdAt <= dayEnd).length;
+6363:                 leads,
+6379:                 todayLeads,
+6549:             const teamLeaderId = parseInt(teamId);
+6550:             filteredUsers = users.filter(u => u.id === teamLeaderId || u.reportingTo === teamLeaderId);
+6817:             const leads = userCandidates.filter(c => c.addedBy === user.id && c.dataType === "lead").length;
+6832:                 leadsGenerated: leads,
+6883:         // 9. LEAD DATA ANALYTICS
+6884:         const totalLeads = filteredCandidates.filter(c => c.dataType === "lead").length;
+6885:         const leadConversion = filteredCandidates.filter(c => c.dataType === "lead" && (c.status === "Hired" || c.remarks === "Selected")).length;
+6887:         // Lead category breakdown
+6888:         const leadCats = ["Technology & IT", "HR", "Sales", "Marketing", "Finance", "Healthcare", "Engineering", "BPO"];
+6889:         const categoryBreakdown = leadCats.map(cat => {
+6890:             const catLeads = filteredCandidates.filter(c => c.dataType === "lead" && (c.sector === cat || c.Qualification === cat || c.remarks === cat));
+6891:             const count = catLeads.length;
+6892:             const conv = catLeads.filter(c => c.status === "Hired" || c.remarks === "Selected").length;
+6956:         // 13. SEPARATE LEADERBOARDS
+6972:                 desc: rankedRecruiters[0] ? `${rankedRecruiters[0].name} leads the recruiter board with a Performance Score of ${rankedRecruiters[0].performanceScore}%, converting ${rankedRecruiters[0].joined} joinings this period.` : "Recruitment data is stabilizing. Performance scores are pending."
+6977:                 desc: sourceReport[0] ? `${sourceReport[0].sourceName} is our primary sourcing powerhouse with ${sourceReport[0].candidatesGenerated} candidates generated and a ${sourceReport[0].conversionRate}% overall joining conversion rate.` : "LinkedIn is our leading candidate generation platform today."
+7005:             const leads = candidates.filter(c => c.dataType === "lead" && c.createdAt >= dayStart && c.createdAt <= dayEnd).length;
+7012:                 leads
+7082:             leads: {
+7083:                 totalLeads,
+7084:                 leadConversion,
+7116: // 5. Reassign Leader
+7674:                 senderName: r.announcement.sender?.name || "Team Lead",
+8577:         const toTL = Array.isArray(sendTo) && (sendTo.includes("Team Leader") || sendTo.includes("tl"));
+10259:         vendorCreated: 10, leadCreated: 2, leadForwarded: 10,
+10600:                     badge: "Team Leader"
+10780:         if (actionType === "lead_created") {
+10781:             finalPoints = economy.leadCreated !== undefined ? economy.leadCreated : 2;
+10782:         } else if (actionType === "lead_forwarded") {
+10783:             finalPoints = economy.leadForwarded !== undefined ? economy.leadForwarded : 10;

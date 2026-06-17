@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Fast RMS AI Sourcing Companion",
+  "version": "1.0.0",
+  "description": "AI Sourcing & Reporting Companion. Fetch candidates data, compile recruitment reports, and inject them into Hostinger Webmail, Gmail, or Outlook.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost:5173/*",
+    "http://localhost:5000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

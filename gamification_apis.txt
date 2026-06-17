@@ -1,0 +1,238 @@
+--- app.get("/api/gamification/leaderboard" ---
+app.get("/api/gamification/leaderboard", authenticate, async (req, res) => {
+    try {
+        const { companyId } = req.user;
+        const { type } = req.query;
+        const UserMetrics = sequelize.models.UserMetrics;
+        const PointHistory = sequelize.models.PointHistory;
+        if (!UserMetrics || !PointHistory) return res.json([]);
+
+        if (type === "team") {
+            const recruiters = await User.findAll({
+                where: { companyId, role: "recruiter" },
+                include: [{ model: UserMetrics, as: "metrics" }]
+            });
+            const teamScores = {};
+            recruiters.forEach(r => {
+                const tlId = r.reportingTo;
+                if (tlId) {
+                    const coins = r.metrics ? r.metrics.totalCoins : 0;
+                    teamScores[tlId] = (teamScores[tlId] || 0) + coins;
+                }
+            });
+            const tlIds = Object.keys(teamScores).map(Number);
+            const tls = await User.findAll({
+                where: { id: tlIds },
+                attributes: ["id", "name"]
+            });
+            const teamList = tls.map(tl => {
+                return {
+                    id: tl.id,
+                    name: tl.name + "'s Team",
+                    coins: teamScores[tl.id] || 0,
+                    role: "tl",
+                    badge: "Team Starter"
+                };
+            }).sort((a, b) => b.coins - a.coins);
+            teamList.forEach((item, index) => item.rank = index + 1);
+            return res.json(teamList);
+        } else if (type === "overall") {
+            const recruiters = await User.findAll({
+                where: { companyId, role: "recruiter" },
+                include: [{ model: UserMetrics, as: "metrics" }]
+            });
+            const teamScores = {};
+            recruiters.forEach(r => {
+                const tlId = r.reportingTo;
+                if (tlId) {
+                    const coins = r.metrics ? r.metrics.totalCoins : 0;
+                    teamScores[tlId] = (teamScores[tlId] || 0) + coins;
+                }
+            });
+            const tls = await User.findAll({
+                where: { companyId, role: "tl" },
+                include: [{ model: UserMetrics, as: "metrics" }]
+            });
+            const overallList = tls.map(tl => {
+                const personalCoins = tl.metrics ? tl.metrics.totalCoins : 0;
+                const teamRecruiterCoins = teamScores[tl.id] || 0;
+                return {
+                    id: tl.id,
+                    name: tl.name,
+                    coins: personalCoins + teamRecruiterCoins,
+                    role: "tl",
+                    badge: "Team Leader"
+                };
+            }).sort((a, b) => b.coins - a.coins);
+            overallList.forEach((item, index) => item.rank = index + 1);
+            return res.json(overallList);
+        } else {
+            // Get all metrics joined with Users
+            const metrics = await UserMetrics.findAll({
+                include: [{ model: User, as: "user", where: { companyId }, attributes: ["id", "name", "role", "designation"] }],
+                order: [["totalCoins", "DESC"]]
+            });
+
+            const list = metrics.map(m => {
+                let badge = "Novice";
+                if (m.totalCoins >= 5000) badge = "Legend";
+                else if (m.totalCoins >= 2500) badge = "Master";
+                else if (m.totalCoins >= 1000) badge = "Pro";
+                else if (m.totalCoins >= 500) badge = "Veteran";
+
+                return {
+                    id: m.userId,
+                    name: m.user ? m.user.name : "Unknown",
+                    role: m.user ? m.user.role : "recruiter",
+                    designation: m.user ? m.user.designation : "",
+                    coins: m.totalCoins,
+                    badge: badge,
+                    selections: m.totalSelections,
+                    joinings: m.totalJoinings,
+                    sourced: m.uniqueCandidatesS
+--- app.get("/api/gamification/me" ---
+app.get("/api/gamification/me", authenticate, async (req, res) => {
+    try {
+        const { userId: id, companyId } = req.user;
+        const UserMetrics = sequelize.models.UserMetrics;
+        const PointHistory = sequelize.models.PointHistory;
+        const Attendance = sequelize.models.Attendance;
+        const Shift = sequelize.models.Shift;
+        const Task = sequelize.models.Task;
+        
+        let [metrics] = await UserMetrics.findOrCreate({ where: { userId: id } });
+
+        // Run daily activity checks and monthly calculations
+        try {
+            await runDailyRecruiterTLChecks(id, req.user.role, companyId);
+            await runMonthlyGamificationCalculations(id, req.user.role, companyId);
+        } catch (periodErr) {
+            console.error("Failed to run periodic gamification calculations:", periodErr);
+        }
+        
+        // Find position
+        const allMetrics = await UserMetrics.findAll({
+            include: [{ model: User, as: "user", where: { companyId }, attributes: ["id"] }],
+            order: [["totalCoins", "DESC"]]
+        });
+        const rank = allMetrics.findIndex(m => m.userId === id) + 1;
+        
+        // Find team position (if TL, compare with other TLs, if recruiter, compare within team)
+        let teamRank = rank; // Simplified team rank
+
+        let badge = "Novice";
+        let nextBadge = "Veteran";
+        let coinsRequired = 500;
+        
+        if (metrics.totalCoins >= 5000) { badge = "Legend"; nextBadge = "Max Level"; coinsRequired = 0; }
+        else if (metrics.totalCoins >= 2500) { badge = "Master"; nextBadge = "Legend"; coinsRequired = 5000 - metrics.totalCoins; }
+        else if (metrics.totalCoins >= 1000) { badge = "Pro"; nextBadge = "Master"; coinsRequired = 2500 - metrics.totalCoins; }
+        else if (metrics.totalCoins >= 500) { badge = "Veteran"; nextBadge = "Pro"; coinsRequired = 1000 - metrics.totalCoins; }
+        else { coinsRequired = 500 - metrics.totalCoins; }
+
+        const history = await PointHistory.findAll({
+            where: { userId: id },
+            order: [["createdAt", "DESC"]],
+            limit: 50
+        });
+
+        // Calculate real-time KPI metrics for dashboard
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0,0,0,0);
+
+        const attendances = await Attendance.findAll({
+            where: {
+                userId: id,
+                date: { [Op.gte]: startOfMonth.toISOString().split('T')[0] }
+            },
+            include: [{ model: Shift, as: "shift" }]
+        });
+
+        let totalLateMins = 0;
+        let totalEarlyMins = 0;
+        let lateDays = 0;
+        let earlyDays = 0;
+        let totalAbsents = 0;
+
+        attendances.forEach(att => {
+            if (att.status === 'absent') {
+                totalAbsents++;
+            } else if (att.loginTime && att.shift) {
+                const checkInDate = new Date(att.loginTime);
+                const [sh, sm] = att.shift.startTime.split(":").map(Number);
+                const shiftStartDate = new Date(checkInDate);
+                shiftStartDate.setHours(sh, sm, 0, 0);
+
+                const diffMins = Math.round((checkInDate.getTime() - shiftStartDate.getTime()) / 60000);
+                if (diffMins > 0) {
+                    totalLateMins += diffMins;
+                    lateDays++;
+                } else if (diffMins < 0) {
+                    totalEarlyMins += Math.abs(diffMins);
+                    earlyDays++;
+                }
+            }
+        });
+
+        const avgLateIn = lateDays > 0 ? (totalLateMins / lateDays / 60).toFixed(1) : "0.0";
+        const avgEarlyIn = earlyDays > 0 ? (totalEarlyMins / earlyDays / 60).toFixed(1) : "0.0";
+
+        const completedTasks = await Task.count({
+            where: { assigneeId: id, status: "completed" }
+        });
+
+        // Sum team selections and joinings for TLs
+        let teamSelections = 0;
+        let teamJoinings = 0;
+        if (req.user.
+--- app.get("/api/settings/gamification" ---
+app.get("/api/settings/gamification", authenticate, async (req, res) => {
+    try {
+        const SystemSetting = sequelize.models.SystemSetting;
+        if (!SystemSetting) return res.json({});
+        const setting = await SystemSetting.findOne({ where: { key: "gamification_economy" } });
+        if (setting) {
+            res.json(JSON.parse(setting.value));
+        } else {
+            res.json({});
+        }
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post("/api/settings/gamification", authenticate, async (req, res) => {
+    try {
+        if (req.user.role !== "boss" && req.user.role !== "superadmin") {
+            return res.status(403).json({ error: "Access denied" });
+        }
+        const SystemSetting = sequelize.models.SystemSetting;
+        if (!SystemSetting) return res.status(500).json({ error: "SystemSetting not initialized" });
+        
+        let [setting] = await SystemSetting.findOrCreate({ where: { key: "gamification_economy" }, defaults: { value: "{}" } });
+        setting.value = JSON.stringify(req.body);
+        await setting.save();
+        res.json({ success: true });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+--- app.post("/api/settings/gamification" ---
+app.post("/api/settings/gamification", authenticate, async (req, res) => {
+    try {
+        if (req.user.role !== "boss" && req.user.role !== "superadmin") {
+            return res.status(403).json({ error: "Access denied" });
+        }
+        const SystemSetting = sequelize.models.SystemSetting;
+        if (!SystemSetting) return res.status(500).json({ error: "SystemSetting not initialized" });
+        
+        let [setting] = await SystemSetting.findOrCreate({ where: { key: "gamification_economy" }, defaults: { value: "{}" } });
+        setting.value = JSON.stringify(req.body);
+        await setting.save();
+        res.json({ success: true });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});

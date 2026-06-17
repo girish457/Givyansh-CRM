@@ -1,0 +1,10 @@
+Line 21: import Task from "./models/Task.js";
+Line 336: app.get("/api/tasks/eligible-assignees", authenticate, async (req, res) => {
+Line 363: app.post("/api/tasks", authenticate, async (req, res) => {
+Line 373: Task.create({
+Line 406: app.get("/api/tasks", authenticate, async (req, res) => {
+Line 415: const tasks = await Task.findAll({
+Line 444: app.delete("/api/tasks/batch", authenticate, async (req, res) => {
+Line 448: await Task.destroy({ where: { id: ids, assignerId: req.user.userId } });
+Line 455: app.patch("/api/tasks/:id/status", authenticate, async (req, res) => {
+Line 461: const task = await Task.findOne({

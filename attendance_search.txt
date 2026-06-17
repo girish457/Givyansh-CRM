@@ -1,0 +1,104 @@
+Line 27: import { Attendance, AttendanceLog, BreakLog } from "./models/Attendance.js";
+Line 42: const searchTerms = ["/attendance/", "BreakLog", "recalculateAttendanceStats", "punch-in", "activity", "syncTodayAttendanceShifts"];
+Line 42: const searchTerms = ["/attendance/", "BreakLog", "recalculateAttendanceStats", "punch-in", "activity", "syncTodayAttendanceShifts"];
+Line 42: const searchTerms = ["/attendance/", "BreakLog", "recalculateAttendanceStats", "punch-in", "activity", "syncTodayAttendanceShifts"];
+Line 42: const searchTerms = ["/attendance/", "BreakLog", "recalculateAttendanceStats", "punch-in", "activity", "syncTodayAttendanceShifts"];
+Line 42: const searchTerms = ["/attendance/", "BreakLog", "recalculateAttendanceStats", "punch-in", "activity", "syncTodayAttendanceShifts"];
+Line 42: const searchTerms = ["/attendance/", "BreakLog", "recalculateAttendanceStats", "punch-in", "activity", "syncTodayAttendanceShifts"];
+Line 132: "ALTER TABLE Users ADD COLUMN currentActivity VARCHAR(255) NULL",
+Line 135: "ALTER TABLE users ADD COLUMN currentActivity VARCHAR(255) NULL",
+Line 593: // Track activity and update lastSeen in real-time (throttled to once per minute to avoid deadlocks/timeouts)
+Line 2068: const syncTodayAttendanceShifts = async (employeeIds, shiftId) => {
+Line 2098: const breaks = await BreakLog.findAll({ where: { attendanceId: att.id } });
+Line 2104: await recalculateAttendanceStats(att.id);
+Line 2133: await syncTodayAttendanceShifts(employeeIds, shift.id);
+Line 2172: await syncTodayAttendanceShifts(oldUserIds, null);
+Line 2185: await syncTodayAttendanceShifts(employeeIds, req.params.id);
+Line 2193: await syncTodayAttendanceShifts(mappedUserIds, req.params.id);
+Line 2224: await syncTodayAttendanceShifts(oldUserIds, null);
+Line 2278: await syncTodayAttendanceShifts(employeeIds, shiftId);
+Line 2287: app.get("/api/attendance/hub", authenticate, async (req, res) => {
+Line 2305: await recalculateAttendanceStats(todayAtt.id);
+Line 2329: { model: BreakLog, as: "breaks" }
+Line 2379: { model: BreakLog, as: "breaks" }
+Line 2459: async function recalculateAttendanceStats(attendanceId) {
+Line 2467: const allBreaks = await BreakLog.findAll({ where: { attendanceId } });
+Line 2605: app.post("/api/attendance/punch-in", authenticate, async (req, res) => {
+Line 2605: app.post("/api/attendance/punch-in", authenticate, async (req, res) => {
+Line 2651: const existingBreaks = await BreakLog.findAll({ where: { attendanceId: attendance.id } });
+Line 2728: await recalculateAttendanceStats(attendance.id);
+Line 2737: app.post("/api/attendance/punch-out", authenticate, async (req, res) => {
+Line 2766: const openBreak = await BreakLog.findOne({
+Line 2795: await recalculateAttendanceStats(attendance.id);
+Line 2810: app.post("/api/attendance/activity", authenticate, async (req, res) => {
+Line 2810: app.post("/api/attendance/activity", authenticate, async (req, res) => {
+Line 2833: const openBreak = await BreakLog.findOne({
+Line 2844: await BreakLog.create({
+Line 2851: // Activity detected, close any open break
+Line 2852: const openBreak = await BreakLog.findOne({
+Line 2874: const allBreaks = await BreakLog.findAll({ where: { attendanceId: attendance.id } });
+Line 3332: app.get("/api/superadmin/live-activity", authenticate, async (req, res) => {
+Line 3370: const openBreak = await BreakLog.findOne({
+Line 4207: attributes: ["id", "name", "email", "role", "currentActivity", "lastSeen"]
+Line 4271: { model: BreakLog, as: "breaks" },
+Line 4490: candidateActivity: totalSourced,
+Line 4550: const sortedJoins = [...recruiterReports].sort((a,b) => (b.candidateStatuses.Joined / (b.candidateActivity || 1)) - (a.candidateStatuses.Joined / (a.candidateActivity || 1)));
+Line 4617: // Recruiter Live Activity Ping Route
+Line 4618: app.post("/api/recruiter/activity-ping", authenticate, async (req, res) => {
+Line 4620: const { activity } = req.body;
+Line 4621: if (!activity) return res.status(400).json({ error: "Activity is required" });
+Line 4623: { currentActivity: activity, lastSeen: new Date() },
+Line 4688: { model: BreakLog, as: 'breaks' }
+Line 4736: // Determine Current Activity (Real database updates & ping logs)
+Line 4737: let currentActivity = recruiter.currentActivity;
+Line 4739: currentActivity = "Inactive";
+Line 4741: currentActivity = openBreak.type === "lunch" ? "Lunch Break" : "On Break";
+Line 4742: } else if (!currentActivity || currentActivity === "Inactive" || currentActivity === "On Break" || currentActivity === "Lunch Break") {
+Line 4754: currentActivity = "Updating Selected Candidates";
+Line 4756: currentActivity = "Scheduling Interview";
+Line 4758: currentActivity = "Working on Leads";
+Line 4760: currentActivity = "Updating Candidate";
+Line 4771: currentActivity = "Updating Tasks";
+Line 4773: currentActivity = "Working on CRM";
+Line 4895: currentActivity,
+Line 4920: const att = await Attendance.findOne({ where: { userId: item.id, date: todayStr }, include: [{ model: BreakLog, as: "breaks" }] });
+Line 5052: { model: BreakLog, as: 'breaks' }
+Line 5107: { model: BreakLog, as: 'breaks' }
+Line 5242: // Recruiter Activity
+Line 5243: let recActivity = recruiter.currentActivity || "CRM Desking";
+Line 5244: if (!recOnline) recActivity = "Inactive";
+Line 5245: else if (recOpenBreak) recActivity = recOpenBreak.type === "lunch" ? "Lunch Break" : "On Break";
+Line 5258: currentActivity: recActivity,
+Line 5290: // TL Activity
+Line 5291: let tlActivity = tl.currentActivity || "Team Oversight";
+Line 5292: if (!tlOnline) tlActivity = "Offline";
+Line 5293: else if (tlOpenBreak) tlActivity = tlOpenBreak.type === "lunch" ? "Lunch Break" : "On Break";
+Line 5303: currentActivity: tlActivity,
+Line 5339: const sortedByActivity = [...list].sort((a,b)=> {
+Line 5344: mostActiveTl = sortedByActivity[0];
+Line 5353: // Dynamic candidate activity trends (last 7 days)
+Line 5354: const activityTrends = [];
+Line 5378: activityTrends.push({
+Line 5418: activityTrends
+Line 5493: { model: BreakLog, as: 'breaks' },
+Line 5757: // 8. Dynamic Activity Feed (Real-Time logs)
+Line 5758: const activityFeed = [];
+Line 5768: activityFeed.push({
+Line 5777: activityFeed.push({
+Line 5786: activityFeed.push({
+Line 5795: activityFeed.push({
+Line 5806: // Attendance & Break activity
+Line 5817: activityFeed.push({
+Line 5826: activityFeed.push({
+Line 5838: const breakLogsToday = await BreakLog.findAll({
+Line 5844: breakLogsToday.forEach(b => {
+Line 5848: activityFeed.push({
+Line 5857: activityFeed.push({
+Line 5875: activityFeed.push({
+Line 5886: activityFeed.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+Line 5887: const finalActivityFeed = activityFeed.slice(0, 30);
+Line 5938: // Low activity check
+Line 6005: activityFeed: finalActivityFeed,
+Line 6140: { model: BreakLog, as: 'breaks' },
+Line 7893: app.get("/api/employee-profile/:userId/activity-history", authenticate, async (req, res) => {
+Line 7969: { model: BreakLog, as: "breaks" }
