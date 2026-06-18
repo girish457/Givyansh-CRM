@@ -38,6 +38,8 @@ import {
 import TaskNotificationOverlay from "@/components/dashboard/TaskNotificationOverlay";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import PolicyAcknowledgementPopup from "@/components/dashboard/PolicyAcknowledgementPopup";
+import GlobalChat from "@/components/dashboard/GlobalChat";
+import FloatingChat from "@/components/dashboard/FloatingChat";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/styles/Admin.css";
 import { 
@@ -1012,6 +1014,9 @@ export default function AdminLayout({ children, role, userName = "Girish G.", ac
           </motion.div>
         )}
       </AnimatePresence>
+      {role !== "superadmin" && (
+        <FloatingChat user={user} role={role} />
+      )}
     </div>
   );
 }

@@ -36,6 +36,7 @@ import { Feedback, FeedbackReply } from "./models/Feedback.js";
 import { Policy, PolicyAcknowledgement, PolicyAuditLog } from "./models/Policy.js";
 import UserMetrics from "./models/UserMetrics.js";
 import PointHistory from "./models/PointHistory.js";
+import ChatMessage from "./models/ChatMessage.js";
 
 const app = express();
 
@@ -281,7 +282,17 @@ connectDB().then(async () => {
                 "ALTER TABLE jobs ADD COLUMN round4Name VARCHAR(255) NULL",
                 "ALTER TABLE jobs ADD COLUMN round5Name VARCHAR(255) NULL",
                 "ALTER TABLE Jobs ADD COLUMN isHold BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE jobs ADD COLUMN isHold BOOLEAN DEFAULT FALSE"
+                "ALTER TABLE jobs ADD COLUMN isHold BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE chat_messages ADD COLUMN reactions TEXT NULL",
+                "ALTER TABLE chat_messages ADD COLUMN replyToId INT NULL",
+                "ALTER TABLE chat_messages ADD COLUMN replyToMessage TEXT NULL",
+                "ALTER TABLE ChatMessages ADD COLUMN reactions TEXT NULL",
+                "ALTER TABLE ChatMessages ADD COLUMN replyToId INT NULL",
+                "ALTER TABLE ChatMessages ADD COLUMN replyToMessage TEXT NULL",
+                "ALTER TABLE chat_messages ADD COLUMN isDeleted BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE ChatMessages ADD COLUMN isDeleted BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE users ADD COLUMN lastReadMessageId INT DEFAULT 0",
+                "ALTER TABLE Users ADD COLUMN lastReadMessageId INT DEFAULT 0"
             ];
 
             for (const sql of migrations) {
@@ -420,7 +431,11 @@ connectDB().then(async () => {
                 }
 
                 // Start the server ONLY after sync and migrations are fully completed!
-                app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+                app.listen(PORT, () => {
+                    console.log(`Server running on http://localhost:${PORT}`);
+                    runChatCleanup();
+                    setInterval(runChatCleanup, 12 * 60 * 60 * 1000);
+                });
             })
             .catch((err) => {
                 console.error("Fatal database sync error:", err.message);
@@ -1841,6 +1856,313 @@ app.put("/api/notifications/clear", authenticate, async (req, res) => {
     }
 });
 
+// --- Global Chat Endpoints ---
+app.get("/api/chat", authenticate, async (req, res) => {
+    try {
+        const { companyId } = req.user;
+        if (!companyId) {
+            return res.status(400).json({ error: "Company ID is required" });
+        }
+        const messages = await ChatMessage.findAll({
+            where: { companyId },
+            order: [["createdAt", "ASC"]],
+            limit: 200
+        });
+        res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post("/api/chat", authenticate, async (req, res) => {
+    try {
+        const { userId, name, role, companyId } = req.user;
+        const { message, replyToId } = req.body;
+        if (!companyId) {
+            return res.status(400).json({ error: "Company ID is required to chat" });
+        }
+        if (!message || message.trim() === "") {
+            return res.status(400).json({ error: "Message content cannot be empty" });
+        }
+
+        let replyToIdVal = null;
+        let replyToMessageVal = null;
+
+        if (replyToId) {
+            const parent = await ChatMessage.findOne({
+                where: { id: replyToId, companyId }
+            });
+            if (parent) {
+                replyToIdVal = parent.id;
+                replyToMessageVal = JSON.stringify({
+                    senderName: parent.senderName,
+                    message: parent.message,
+                    senderId: parent.senderId
+                });
+            }
+        }
+
+        const newMessage = await ChatMessage.create({
+            senderId: userId,
+            senderName: name,
+            senderRole: role,
+            message: message.trim(),
+            companyId,
+            replyToId: replyToIdVal,
+            replyToMessage: replyToMessageVal
+        });
+        res.status(201).json(newMessage);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post("/api/chat/:id/react", authenticate, async (req, res) => {
+    try {
+        const { userId, name, companyId } = req.user;
+        const { id } = req.params;
+        const { emoji } = req.body;
+
+        if (!emoji) {
+            return res.status(400).json({ error: "Emoji is required" });
+        }
+
+        const message = await ChatMessage.findOne({ where: { id, companyId } });
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        let reactions = [];
+        if (message.reactions) {
+            try {
+                reactions = JSON.parse(message.reactions);
+            } catch (e) {
+                reactions = [];
+            }
+        }
+        if (!Array.isArray(reactions)) {
+            reactions = [];
+        }
+
+        const existingReactionIndex = reactions.findIndex(r => r.userId === userId);
+        if (existingReactionIndex > -1) {
+            const existingReaction = reactions[existingReactionIndex];
+            if (existingReaction.emoji === emoji) {
+                reactions.splice(existingReactionIndex, 1);
+            } else {
+                reactions[existingReactionIndex].emoji = emoji;
+                reactions[existingReactionIndex].name = name;
+            }
+        } else {
+            reactions.push({ userId, name, emoji });
+        }
+
+        message.reactions = JSON.stringify(reactions);
+        await message.save();
+
+        res.json({ success: true, reactions });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Chat Read Status Tracking ---
+app.post("/api/chat/read", authenticate, async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { lastMessageId } = req.body;
+        if (typeof lastMessageId !== "number") {
+            return res.status(400).json({ error: "lastMessageId must be a number" });
+        }
+        
+        const user = await User.findByPk(userId);
+        if (user) {
+            if (!user.lastReadMessageId || lastMessageId > user.lastReadMessageId) {
+                await user.update({ lastReadMessageId });
+            }
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Bulk Delete Chat Messages ---
+app.post("/api/chat/delete-bulk", authenticate, async (req, res) => {
+    try {
+        const { userId, companyId } = req.user;
+        const { messageIds } = req.body;
+        if (!Array.isArray(messageIds) || messageIds.length === 0) {
+            return res.status(400).json({ error: "messageIds array is required" });
+        }
+        
+        await ChatMessage.update(
+            { 
+                isDeleted: true, 
+                message: "This message was deleted",
+                reactions: null
+            },
+            {
+                where: {
+                    id: { [Op.in]: messageIds },
+                    senderId: userId,
+                    companyId
+                }
+            }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Chat Message Seen/Delivered Status Details ---
+app.get("/api/chat/:id/status", authenticate, async (req, res) => {
+    try {
+        const { companyId } = req.user;
+        const { id } = req.params;
+        
+        const message = await ChatMessage.findOne({ where: { id, companyId } });
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+        
+        const members = await User.findAll({
+            where: {
+                companyId,
+                id: { [Op.ne]: message.senderId },
+                email: {
+                    [Op.notIn]: [
+                        "boss@fast-rms.com",
+                        "manager@fast-rms.com",
+                        "tl@fast-rms.com",
+                        "recruiter@fast-rms.com"
+                    ]
+                }
+            },
+            attributes: ["id", "name", "role", "email", "lastReadMessageId"]
+        });
+        
+        const today = new Date().toISOString().split('T')[0];
+        const attendances = await Attendance.findAll({
+            where: {
+                userId: { [Op.in]: members.map(m => m.id) },
+                date: today
+            }
+        });
+        
+        const openBreaks = await BreakLog.findAll({
+            where: {
+                attendanceId: { [Op.in]: attendances.map(a => a.id) },
+                endTime: null
+            }
+        });
+        const openBreakAttendanceIds = new Set(openBreaks.map(b => b.attendanceId));
+        
+        const attendanceMap = {};
+        attendances.forEach(a => {
+            attendanceMap[a.userId] = {
+                id: a.id,
+                logoutTime: a.logoutTime,
+                isIdle: a.isIdle,
+                onBreak: openBreakAttendanceIds.has(a.id)
+            };
+        });
+        
+        const seen = [];
+        const delivered = [];
+        const undelivered = [];
+        
+        members.forEach(m => {
+            const hasSeen = m.lastReadMessageId && m.lastReadMessageId >= message.id;
+            
+            if (hasSeen) {
+                seen.push({ id: m.id, name: m.name, role: m.role });
+            } else {
+                const att = attendanceMap[m.id];
+                const isOffline = !att || att.logoutTime !== null || att.isIdle || att.onBreak;
+                
+                if (isOffline) {
+                    undelivered.push({ id: m.id, name: m.name, role: m.role });
+                } else {
+                    delivered.push({ id: m.id, name: m.name, role: m.role });
+                }
+            }
+        });
+        
+        res.json({ seen, delivered, undelivered });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Get Company Members for Chat Tagging ---
+app.get("/api/chat/company-members", authenticate, async (req, res) => {
+    try {
+        const { companyId } = req.user;
+        if (!companyId) {
+            return res.status(400).json({ error: "Company ID is required" });
+        }
+        const members = await User.findAll({
+            where: {
+                companyId,
+                email: {
+                    [Op.notIn]: [
+                        "boss@fast-rms.com",
+                        "manager@fast-rms.com",
+                        "tl@fast-rms.com",
+                        "recruiter@fast-rms.com"
+                    ]
+                }
+            },
+            attributes: ["id", "name", "role", "email"],
+            order: [["name", "ASC"]]
+        });
+        res.json(members);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Global Chat Monthly Cleanup Background Task ---
+async function runChatCleanup() {
+    try {
+        const now = new Date();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+
+        let setting = await SystemSetting.findOne({ where: { key: "last_chat_cleanup_time" } });
+        if (!setting) {
+            // If it doesn't exist, set it to now so that cleanup will run in 30 days
+            await SystemSetting.create({ key: "last_chat_cleanup_time", value: now.toISOString() });
+            console.log("[Chat Cleanup] Initialized last_chat_cleanup_time to now.");
+            return;
+        }
+
+        const lastCleanup = new Date(setting.value);
+        if (now - lastCleanup >= thirtyDaysMs) {
+            console.log("[Chat Cleanup] Running monthly chat cleanup...");
+            const cutoffDate = new Date(now.getTime() - tenDaysMs);
+            const deletedCount = await ChatMessage.destroy({
+                where: {
+                    createdAt: {
+                        [Op.lt]: cutoffDate
+                    }
+                }
+            });
+            console.log(`[Chat Cleanup] Deleted ${deletedCount} chat messages older than 10 days.`);
+            
+            setting.value = now.toISOString();
+            await setting.save();
+        } else {
+            const nextCleanupInDays = ((thirtyDaysMs - (now - lastCleanup)) / (24 * 60 * 60 * 1000)).toFixed(2);
+            console.log(`[Chat Cleanup] Next cleanup in ${nextCleanupInDays} days.`);
+        }
+    } catch (error) {
+        console.error("[Chat Cleanup] Error during cleanup:", error.message);
+    }
+}
+
 // --- Client Management Endpoints ---
 app.get("/api/clients", authenticate, async (req, res) => {
     try {
@@ -2076,12 +2398,21 @@ app.get("/api/seed", async (req, res) => {
         // Force reset these specific users
         await User.destroy({ where: { email: [superEmail, ...dummyEmails] } });
 
+        const [company] = await Company.findOrCreate({
+            where: { name: "First Attempt" },
+            defaults: {
+                adminEmail: "admin@firstattempt.digital",
+                adminPassword: dummyPassword,
+                plan: "Enterprise"
+            }
+        });
+
         await User.create({ name: "Givyansh Master", email: superEmail, password: superPassword, role: "superadmin" });
 
-        const boss = await User.create({ name: "The Boss", email: "givyansh779081360977@gmail.com", password: dummyPassword, role: "boss" });
-        const manager = await User.create({ name: "Demo Manager", email: "givyansh7790813609@gmail.com", password: dummyPassword, role: "manager", reportingTo: boss.id });
-        const tl = await User.create({ name: "Demo Team Lead", email: "givyansh77908136@gmail.com", password: dummyPassword, role: "tl", reportingTo: manager.id });
-        const recruiter = await User.create({ name: "Demo Recruiter", email: "givyansh779081@gmail.com", password: dummyPassword, role: "recruiter", reportingTo: tl.id });
+        const boss = await User.create({ name: "The Boss", email: "givyansh779081360977@gmail.com", password: dummyPassword, role: "boss", companyId: company.id });
+        const manager = await User.create({ name: "Demo Manager", email: "givyansh7790813609@gmail.com", password: dummyPassword, role: "manager", reportingTo: boss.id, companyId: company.id });
+        const tl = await User.create({ name: "Demo Team Lead", email: "givyansh77908136@gmail.com", password: dummyPassword, role: "tl", reportingTo: manager.id, companyId: company.id });
+        const recruiter = await User.create({ name: "Demo Recruiter", email: "givyansh7790@gmail.com", password: dummyPassword, role: "recruiter", reportingTo: tl.id, companyId: company.id });
 
 
         // 2. Seed Pricing Plans (from reference)

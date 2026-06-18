@@ -1,1 +1,24 @@
-PING_FAILED: connect ECONNREFUSED 127.0.0.1:5000
+STATUS: 200
+HEADERS: {
+  "x-powered-by": "Express",
+  "vary": "Origin",
+  "access-control-allow-credentials": "true",
+  "content-type": "text/html; charset=utf-8",
+  "content-length": "1167",
+  "etag": "W/\"48f-wfNCPke0FlZK5hPlF4mIenQRkXA\"",
+  "date": "Wed, 17 Jun 2026 17:42:32 GMT",
+  "connection": "keep-alive",
+  "keep-alive": "timeout=5"
+}
+BODY: 
+        <div style="font-family: sans-serif; padding: 50px; text-align: center; background: #ffffff; color: #0f172a; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <h1 style="font-size: 3rem; margin-bottom: 1rem;">Givyansh <span style="color: #2563eb;">CRM</span> (MySQL)</h1>
+            <p style="color: #475569; font-size: 1.2rem; margin-bottom: 2rem;">Powering Enterprise Recruitment Workflows</p>
+            <div style="background: #f8fafc; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0; max-width: 500px;">
+                <p>Frontend is active on <a href="http://localhost:5173" style="color: #2563eb; text-decoration: none; font-weight: bold;">http://localhost:5173</a></p>
+                <hr style="border: 0.5px solid #e2e8f0; margin: 20px auto;">
+                <p><strong>Ready to Seed?</strong> visit <a href="/api/seed" style="color: #2563eb;">/api/seed</a></p>
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 20px;">Database: <span style="color: #475569;">fast_rms</span> (MySQL) is connected.</p>
+            </div>
+        </div>
+    

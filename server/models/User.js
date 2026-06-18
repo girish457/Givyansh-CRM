@@ -41,6 +41,11 @@ const User = sequelize.define("User", {
   currentActivity: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  lastReadMessageId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
   }
 }, { 
   timestamps: true,
