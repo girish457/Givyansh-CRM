@@ -11409,3 +11409,461 @@ app.post("/api/settings/gamification", authenticate, async (req, res) => {
 });
 
 // Gamification trigger watch change
+
+// =============================================================================
+// VENDOR PORTAL BACKEND APIS
+// =============================================================================
+
+// --- Vendor Auth Middleware ---
+const authenticateVendor = async (req, res, next) => {
+    let token = req.cookies.vendor_token;
+    if (!token && req.headers.authorization) {
+        const parts = req.headers.authorization.split(" ");
+        if (parts.length === 2 && parts[0] === "VendorBearer") {
+            token = parts[1];
+        }
+    }
+    if (!token) return res.status(401).json({ error: "Vendor auth required" });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.role !== "vendor") return res.status(403).json({ error: "Access denied" });
+        req.vendor = decoded;
+        next();
+    } catch (err) {
+        res.status(401).json({ error: "Invalid vendor token" });
+    }
+};
+
+// --- Vendor SQL Migrations (run inside runEmergencyMigrations) ---
+// These are added to the startup migration array dynamically
+(async () => {
+    const vendorMigrations = [
+        "ALTER TABLE vendors ADD COLUMN password VARCHAR(255) NULL",
+        "ALTER TABLE vendors ADD COLUMN ownerName VARCHAR(255) NULL",
+        "ALTER TABLE vendors ADD COLUMN vendorCode VARCHAR(50) NULL",
+        "ALTER TABLE vendors ADD COLUMN altPhone VARCHAR(50) NULL",
+        "ALTER TABLE vendors ADD COLUMN gstNo VARCHAR(100) NULL",
+        "ALTER TABLE vendors ADD COLUMN panNo VARCHAR(100) NULL",
+        "ALTER TABLE vendors ADD COLUMN city VARCHAR(255) NULL",
+        "ALTER TABLE vendors ADD COLUMN state VARCHAR(255) NULL",
+        "ALTER TABLE vendors ADD COLUMN country VARCHAR(255) DEFAULT 'India' NULL",
+        "ALTER TABLE vendors ADD COLUMN status VARCHAR(50) DEFAULT 'active' NULL",
+        "ALTER TABLE vendors ADD COLUMN canSubmitCandidates BOOLEAN DEFAULT TRUE NULL",
+        "ALTER TABLE vendors ADD COLUMN tlPermission BOOLEAN DEFAULT FALSE NULL",
+        "ALTER TABLE vendors ADD COLUMN lastLoginAt DATETIME NULL",
+        "ALTER TABLE vendors ADD COLUMN bankDetails TEXT NULL",
+        "ALTER TABLE vendors ADD COLUMN assignedJobs TEXT NULL",
+        "ALTER TABLE vendors ADD COLUMN companyType VARCHAR(100) NULL",
+        "ALTER TABLE vendors ADD COLUMN website VARCHAR(255) NULL",
+        "ALTER TABLE vendors ADD COLUMN contractStart DATE NULL",
+        "ALTER TABLE vendors ADD COLUMN contractEnd DATE NULL",
+        "ALTER TABLE vendors ADD COLUMN commissionRate DECIMAL(5,2) DEFAULT 0.00 NULL",
+        "ALTER TABLE vendors ADD COLUMN companyId INT NULL",
+        "ALTER TABLE vendors ADD COLUMN addedBy INT NULL",
+        "ALTER TABLE vendors MODIFY COLUMN createdAt DATETIME NULL"
+    ];
+    for (const sql of vendorMigrations) {
+        try {
+            await sequelize.query(sql);
+        } catch (e) {
+            // Ignore duplicate column errors silently
+        }
+    }
+})();
+
+// --- Helper: Generate Vendor Code ---
+const generateVendorCode = async () => {
+    try {
+        const count = await Vendor.count();
+        return `VND-${String(count + 1).padStart(4, "0")}`;
+    } catch (e) {
+        return `VND-${Date.now().toString().slice(-6)}`;
+    }
+};
+
+// --- Vendor Login (email OR mobile) ---
+app.post("/api/vendor/login", async (req, res) => {
+    try {
+        const { identifier, password } = req.body;
+        if (!identifier || !password) return res.status(400).json({ error: "Identifier and password are required" });
+
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+
+        // Find by email OR phone
+        const vendor = await Vendor.findOne({
+            where: {
+                [Op.or]: [
+                    { email: identifier },
+                    { phone: identifier }
+                ],
+                status: "active"
+            }
+        });
+
+        if (!vendor) return res.status(401).json({ error: "Invalid credentials or account not found" });
+        if (!vendor.password) return res.status(401).json({ error: "Portal access not configured. Contact your manager." });
+
+        const isMatch = await bcrypt.compare(password, vendor.password);
+        if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
+
+        const token = jwt.sign(
+            { vendorId: vendor.id, role: "vendor", companyId: vendor.companyId, vendorCode: vendor.vendorCode },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        // Update lastLoginAt
+        await vendor.update({ lastLoginAt: new Date() });
+
+        res.cookie("vendor_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({
+            success: true,
+            token,
+            vendor: {
+                id: vendor.id,
+                name: vendor.name,
+                company: vendor.company,
+                vendorCode: vendor.vendorCode,
+                email: vendor.email,
+                phone: vendor.phone
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Logout ---
+app.post("/api/vendor/logout", (req, res) => {
+    res.clearCookie("vendor_token");
+    res.json({ message: "Vendor logged out successfully" });
+});
+
+// --- Vendor Me (current vendor profile from token) ---
+app.get("/api/vendor/me", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.vendor.vendorId, {
+            attributes: { exclude: ["password"] }
+        });
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+        res.json(vendor);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Dashboard Stats ---
+app.get("/api/vendor/dashboard", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendorId = req.vendor.vendorId;
+
+        // Get all candidates linked to this vendor
+        const allCandidates = await Candidate.findAll({
+            where: { vendorId: vendorId }
+        });
+
+        const total = allCandidates.length;
+        let active = 0, interviewScheduled = 0, selected = 0, joined = 0, rejected = 0, dropped = 0, pending = 0;
+
+        allCandidates.forEach(c => {
+            const status = (c.remarks || c.status || "").toLowerCase();
+            if (status.includes("interview") || status.includes("scheduled")) interviewScheduled++;
+            if (status.includes("selected") || status.includes("hired")) selected++;
+            if (status.includes("joined")) joined++;
+            if (status.includes("rejected")) rejected++;
+            if (status.includes("dropped")) dropped++;
+            if (!status || status === "new") pending++;
+            if (!status.includes("joined") && !status.includes("rejected") && !status.includes("dropped")) active++;
+        });
+
+        const successRate = total > 0 ? Math.round((joined / total) * 100) : 0;
+        const joiningRatio = selected > 0 ? Math.round((joined / selected) * 100) : 0;
+        const selectionRatio = total > 0 ? Math.round((selected / total) * 100) : 0;
+
+        // Get assigned jobs count
+        let assignedJobsCount = 0;
+        const vendor = await Vendor.findByPk(vendorId, { attributes: ["assignedJobs"] });
+        if (vendor && vendor.assignedJobs) {
+            try { assignedJobsCount = JSON.parse(vendor.assignedJobs).length; } catch (e) {}
+        }
+
+        // Monthly trend (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        const recentCandidates = allCandidates.filter(c => new Date(c.createdAt) >= sixMonthsAgo);
+        
+        const monthlyTrend = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const monthName = d.toLocaleString("default", { month: "short" });
+            const year = d.getFullYear();
+            const month = d.getMonth();
+            const count = recentCandidates.filter(c => {
+                const cd = new Date(c.createdAt);
+                return cd.getMonth() === month && cd.getFullYear() === year;
+            }).length;
+            monthlyTrend.push({ month: monthName, count });
+        }
+
+        res.json({
+            stats: { total, active, interviewScheduled, selected, joined, rejected, dropped, pending, successRate, joiningRatio, selectionRatio, assignedJobsCount },
+            monthlyTrend
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Candidates List ---
+app.get("/api/vendor/candidates", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const candidates = await Candidate.findAll({
+            where: { vendorId: req.vendor.vendorId },
+            order: [["createdAt", "DESC"]]
+        });
+        res.json(candidates);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Submit Candidate ---
+app.post("/api/vendor/candidates", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const { name, email, phone, designation, currentSalary, expectedSalary, experience, location, jobId, notes } = req.body;
+        if (!name || !phone) return res.status(400).json({ error: "Name and phone are required" });
+
+        const vendor = await Vendor.findByPk(req.vendor.vendorId, { attributes: ["companyId", "canSubmitCandidates", "name"] });
+        if (!vendor || !vendor.canSubmitCandidates) return res.status(403).json({ error: "Candidate submission not permitted" });
+
+        const candidate = await Candidate.create({
+            name, email, phone,
+            designation: designation || "",
+            currentSalary: currentSalary || "",
+            expectedSalary: expectedSalary || "",
+            experience: experience || "",
+            location: location || "",
+            sourcingBy: `Vendor: ${vendor.name}`,
+            vendorId: req.vendor.vendorId,
+            companyId: vendor.companyId,
+            status: "New",
+            remarks: "New",
+            notes: notes || "",
+            jobId: jobId || null,
+            createdAt: new Date()
+        });
+
+        res.json({ success: true, candidate });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Assigned Jobs ---
+app.get("/api/vendor/jobs", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.vendor.vendorId, { attributes: ["assignedJobs", "companyId"] });
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+
+        let assignedJobIds = [];
+        if (vendor.assignedJobs) {
+            try { assignedJobIds = JSON.parse(vendor.assignedJobs); } catch (e) {}
+        }
+
+        let jobs = [];
+        if (assignedJobIds.length > 0) {
+            jobs = await Job.findAll({ where: { id: assignedJobIds } });
+        } else {
+            // If no specific jobs assigned, show open jobs for their company
+            jobs = await Job.findAll({ where: { companyId: vendor.companyId, status: "Open" } });
+        }
+
+        res.json(jobs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Profile (GET) ---
+app.get("/api/vendor/profile", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.vendor.vendorId, { attributes: { exclude: ["password"] } });
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+        res.json(vendor);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Profile (PUT) ---
+app.put("/api/vendor/profile", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.vendor.vendorId);
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+
+        const allowedFields = ["ownerName", "altPhone", "website", "city", "state", "country", "gstNo", "panNo", "bankDetails", "notes"];
+        const updates = {};
+        allowedFields.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+
+        await vendor.update(updates);
+        const updated = await Vendor.findByPk(req.vendor.vendorId, { attributes: { exclude: ["password"] } });
+        res.json({ success: true, vendor: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Vendor Change Password ---
+app.post("/api/vendor/change-password", authenticateVendor, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) return res.status(400).json({ error: "Both passwords are required" });
+
+        const vendor = await Vendor.findByPk(req.vendor.vendorId);
+        if (!vendor || !vendor.password) return res.status(400).json({ error: "Password not configured" });
+
+        const isMatch = await bcrypt.compare(currentPassword, vendor.password);
+        if (!isMatch) return res.status(401).json({ error: "Current password is incorrect" });
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await vendor.update({ password: hashed });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Admin: List Vendors (Boss/Manager/TL) ---
+app.get("/api/vendors", authenticate, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const where = {};
+        if (req.user.companyId) where.companyId = req.user.companyId;
+        const vendors = await Vendor.findAll({
+            where,
+            attributes: { exclude: ["password"] },
+            include: [{ model: User, as: "creator", attributes: ["id", "name", "role"] }],
+            order: [["createdAt", "DESC"]]
+        });
+        res.json(vendors);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Admin: Create Vendor ---
+app.post("/api/vendors", authenticate, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const { name, company, contactPerson, ownerName, phone, altPhone, email, portalPassword, location, city, state, country, type, companyType, specialization, gstNo, panNo, website, contractStart, contractEnd, commissionRate, notes, assignedJobs, canSubmitCandidates } = req.body;
+
+        if (!name || !company) return res.status(400).json({ error: "Vendor name and company are required" });
+
+        const vendorCode = await generateVendorCode();
+        let hashedPassword = null;
+        if (portalPassword) {
+            hashedPassword = await bcrypt.hash(portalPassword, 10);
+        }
+
+        const vendor = await Vendor.create({
+            name, company, contactPerson, ownerName, phone, altPhone, email,
+            password: hashedPassword,
+            location, city, state: state || null, country: country || "India",
+            type: type || "Agency", companyType, specialization, gstNo, panNo,
+            website, contractStart: contractStart || null, contractEnd: contractEnd || null,
+            commissionRate: commissionRate || 0,
+            notes, vendorCode,
+            assignedJobs: assignedJobs ? JSON.stringify(assignedJobs) : null,
+            canSubmitCandidates: canSubmitCandidates !== false,
+            status: "active",
+            companyId: req.user.companyId,
+            addedBy: req.user.userId,
+            createdAt: new Date()
+        });
+
+        res.json({ success: true, vendor: { ...vendor.get(), password: undefined } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Admin: Update Vendor ---
+app.put("/api/vendors/:id", authenticate, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.params.id);
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+
+        const { portalPassword, assignedJobs, ...rest } = req.body;
+        const updates = { ...rest };
+
+        if (portalPassword) {
+            updates.password = await bcrypt.hash(portalPassword, 10);
+        }
+        if (assignedJobs !== undefined) {
+            updates.assignedJobs = JSON.stringify(assignedJobs);
+        }
+
+        await vendor.update(updates);
+        const updated = await Vendor.findByPk(req.params.id, { attributes: { exclude: ["password"] } });
+        res.json({ success: true, vendor: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Admin: Delete Vendor ---
+app.delete("/api/vendors/:id", authenticate, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.params.id);
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+        await vendor.destroy();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Admin: Get Single Vendor (for portal stats view) ---
+app.get("/api/vendors/:id/stats", authenticate, async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
+        const vendor = await Vendor.findByPk(req.params.id, { attributes: { exclude: ["password"] } });
+        if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+
+        const candidates = await Candidate.findAll({ where: { vendorId: req.params.id } });
+        let selected = 0, joined = 0, rejected = 0, dropped = 0, interviewScheduled = 0;
+        candidates.forEach(c => {
+            const s = (c.remarks || c.status || "").toLowerCase();
+            if (s.includes("selected") || s.includes("hired")) selected++;
+            if (s.includes("joined")) joined++;
+            if (s.includes("rejected")) rejected++;
+            if (s.includes("dropped")) dropped++;
+            if (s.includes("interview") || s.includes("scheduled")) interviewScheduled++;
+        });
+
+        res.json({ vendor, stats: { total: candidates.length, selected, joined, rejected, dropped, interviewScheduled } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// =============================================================================
+// END VENDOR PORTAL BACKEND APIS
+// =============================================================================

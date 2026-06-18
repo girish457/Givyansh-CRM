@@ -29,7 +29,7 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formVendor, setFormVendor] = useState<any>({
     name: "", company: "", contactPerson: "", phone: "", 
-    email: "", location: "", specialization: "", type: "Agency", notes: ""
+    email: "", location: "", specialization: "", type: "Agency", notes: "", portalPassword: ""
   });
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -201,7 +201,8 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
       location: formVendor.location,
       type: formVendor.type,
       specialization: formVendor.specialization,
-      notes: formVendor.notes
+      notes: formVendor.notes,
+      portalPassword: formVendor.portalPassword || undefined
     };
 
     try {
@@ -243,7 +244,7 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
         setEditingId(null);
         setFormVendor({
           name: "", company: "", contactPerson: "", phone: "", 
-          email: "", location: "", specialization: "", type: "Agency", notes: ""
+          email: "", location: "", specialization: "", type: "Agency", notes: "", portalPassword: ""
         });
         loadVendors();
       } else {
@@ -525,7 +526,7 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
               setEditingId(null);
               setFormVendor({
                 name: "", company: "", contactPerson: "", phone: "", 
-                email: "", location: "", specialization: "", type: "Agency", notes: ""
+                email: "", location: "", specialization: "", type: "Agency", notes: "", portalPassword: ""
               });
               setIsFormOpen(true);
             }}
@@ -790,6 +791,12 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
                       <textarea value={formVendor.notes} onChange={e => setFormVendor({...formVendor, notes: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", minHeight: "50px", fontSize: "0.8rem", outline: "none", resize: "vertical" }} />
                    </div>
 
+                   <div className="input-group">
+                       <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569", display: "block", marginBottom: "2px" }}>Portal Password (optional)</label>
+                       <input type="password" placeholder="Set vendor portal login password" value={formVendor.portalPassword || ""} onChange={e => setFormVendor({...formVendor, portalPassword: e.target.value})} style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.8rem", outline: "none" }} />
+                       <span style={{ fontSize: "0.65rem", color: "#94a3b8", marginTop: "2px", display: "block" }}>Vendor can log into Vendor Portal at /vendor-login using their email + this password</span>
+                   </div>
+
                    <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "0.5rem" }}>
                       <button type="button" onClick={() => setIsFormOpen(false)} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600 }}>Cancel</button>
                       <button type="submit" style={{ padding: "6px 16px", borderRadius: "6px", background: "#2563eb", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem" }}>Save Agency</button>
@@ -856,6 +863,17 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
                          <strong style={{ color: "#334155", fontSize: "0.8rem" }}>{selectedVendor.email || "N/A"}</strong>
                       </div>
                    </div>
+
+                    {/* Vendor Portal Access Link */}
+                    {selectedVendor.email && (
+                      <div style={{ padding: "10px 14px", borderRadius: "10px", background: "#eff6ff", border: "1px solid #bfdbfe", marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1d4ed8", display: "block" }}>🔗 Vendor Portal Access</span>
+                          <span style={{ fontSize: "0.68rem", color: "#64748b" }}>Login: {selectedVendor.email}</span>
+                        </div>
+                        <a href="/vendor-login" target="_blank" rel="noopener noreferrer" style={{ padding: "5px 12px", borderRadius: "7px", background: "#2563eb", color: "white", fontSize: "0.72rem", fontWeight: 700, textDecoration: "none" }}>Open Portal →</a>
+                      </div>
+                    )}
 
                    {/* Date / Timeline analytics Filter */}
                    <div style={{ background: "#f8fafc", padding: "0.5rem 0.75rem", borderRadius: "10px", border: "1px solid #e2e8f0", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginBottom: "1rem" }}>

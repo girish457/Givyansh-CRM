@@ -1,8 +1,8 @@
 DB Diagnostics:
 Users Count: 17
 Candidates Count: 41
-Tasks Count: 355
+Tasks Count: 358
 Companies/Clients Count: 2
 Jobs Count: 3
 Test User ID: 2, Name: Girish Goswami, Role: superadmin, CompanyID: null
-Successfully inserted test task with ID: 609
+Successfully inserted test task with ID: 612

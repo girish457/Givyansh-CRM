@@ -16,6 +16,8 @@ import TLDashboard from "./pages/dashboard/TL";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import GlobalMatchedLeadsPopup from "./components/dashboard/GlobalMatchedLeadsPopup";
+import VendorLogin from "./pages/VendorLogin";
+import VendorDashboard from "./pages/vendor/VendorDashboard";
 
 export default function App() {
   return (
@@ -46,6 +48,11 @@ export default function App() {
         <Route path="/dashboard/manager/:tab" element={<ManagerDashboard />} />
         <Route path="/dashboard/tl" element={<TLDashboard />} />
         <Route path="/dashboard/tl/:tab" element={<TLDashboard />} />
+
+        {/* Vendor Portal */}
+        <Route path="/vendor-login" element={<VendorLogin />} />
+        <Route path="/vendor" element={<VendorDashboard />} />
+        <Route path="/vendor/:tab" element={<VendorDashboard />} />
       </Routes>
     </BrowserRouter>
   );
