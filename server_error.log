@@ -436,3 +436,4 @@
 [2026-06-18T07:27:58.212Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
 [2026-06-18T07:28:06.665Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
 [2026-06-18T07:28:17.070Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
+[2026-06-18T09:00:32.423Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}

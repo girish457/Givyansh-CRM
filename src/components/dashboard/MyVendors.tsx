@@ -32,6 +32,8 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
     email: "", location: "", specialization: "", type: "Agency", notes: "", portalPassword: ""
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState("");
+  const [duplicatePopup, setDuplicatePopup] = useState<{ show: boolean; existing?: any; message?: string }>({ show: false });
 
   // Search & Filter state
   const [search, setSearch] = useState("");
@@ -178,16 +180,9 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
   // Add/Edit Save
   const handleSaveVendor = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaveError("");
     if (!formVendor.name || !formVendor.company) {
-      alert("Vendor Name and Company Name are mandatory.");
-      return;
-    }
-
-    const exists = vendors.some(
-      (v) => v.id !== editingId && v.name.toLowerCase() === formVendor.name.toLowerCase() && v.company.toLowerCase() === formVendor.company.toLowerCase()
-    );
-    if (exists) {
-      alert("A vendor with this Name and Company already exists!");
+      setSaveError("Vendor Name and Company Name are mandatory.");
       return;
     }
 
@@ -211,11 +206,11 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(savePayload)
       });
+      const responseData = await res.json();
       if (res.ok) {
         const stored = localStorage.getItem(STORAGE_KEY);
         let allVendors: Vendor[] = stored ? JSON.parse(stored) : [];
-        const savedData = await res.json();
-        const savedVendor = savedData.vendor;
+        const savedVendor = responseData.vendor;
 
         const newOrUpdatedVendor: Vendor = {
           id: String(savedVendor.id),
@@ -242,18 +237,21 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
         
         setIsFormOpen(false);
         setEditingId(null);
+        setSaveError("");
         setFormVendor({
           name: "", company: "", contactPerson: "", phone: "", 
           email: "", location: "", specialization: "", type: "Agency", notes: "", portalPassword: ""
         });
         loadVendors();
+      } else if (res.status === 409 && responseData.code === "DUPLICATE_VENDOR") {
+        // Show centered duplicate popup
+        setDuplicatePopup({ show: true, existing: responseData.existingVendor, message: responseData.error });
       } else {
-        const errorData = await res.json();
-        alert(errorData.error || "Failed to save vendor to database.");
+        setSaveError(responseData.error || "Failed to save vendor to database.");
       }
     } catch (err) {
       console.error("Error saving vendor:", err);
-      alert("Network error: Failed to save vendor to database.");
+      setSaveError("Network error: Failed to save vendor to database.");
     }
   };
 
@@ -797,8 +795,15 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
                        <span style={{ fontSize: "0.65rem", color: "#94a3b8", marginTop: "2px", display: "block" }}>Vendor can log into Vendor Portal at /vendor-login using their email + this password</span>
                    </div>
 
+                   {/* Save Error inline */}
+                   {saveError && (
+                     <div style={{ background: "#fef2f2", border: "1px solid #fee2e2", color: "#dc2626", padding: "8px 12px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600 }}>
+                       ⚠️ {saveError}
+                     </div>
+                   )}
+
                    <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "0.5rem" }}>
-                      <button type="button" onClick={() => setIsFormOpen(false)} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600 }}>Cancel</button>
+                      <button type="button" onClick={() => { setIsFormOpen(false); setSaveError(""); }} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600 }}>Cancel</button>
                       <button type="submit" style={{ padding: "6px 16px", borderRadius: "6px", background: "#2563eb", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem" }}>Save Agency</button>
                    </div>
                 </form>
@@ -806,6 +811,38 @@ export default function MyVendors({ currentUser, candidates }: { currentUser: an
           </div>
         )}
       </AnimatePresence>
+
+      {/* Duplicate Vendor Popup — centered full screen */}
+      {duplicatePopup.show && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}>
+          <motion.div
+            initial={{ scale: 0.88, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{ background: "white", borderRadius: "20px", padding: "32px", width: "420px", maxWidth: "94vw", boxShadow: "0 24px 60px -12px rgba(0,0,0,0.3)", textAlign: "center" }}
+          >
+            <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "#fef2f2", border: "2px solid #fee2e2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: "1.6rem" }}>⚠️</div>
+            <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#0f172a", margin: "0 0 8px" }}>Duplicate Vendor Found!</h3>
+            <p style={{ color: "#64748b", fontSize: "0.875rem", margin: "0 0 20px", lineHeight: 1.5 }}>
+              {duplicatePopup.message}
+            </p>
+            {duplicatePopup.existing && (
+              <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "14px 16px", textAlign: "left", marginBottom: "20px" }}>
+                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "8px" }}>Existing Vendor Details</div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0f172a" }}>{duplicatePopup.existing.name}</div>
+                <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{duplicatePopup.existing.company}</div>
+                {duplicatePopup.existing.email && <div style={{ fontSize: "0.75rem", color: "#2563eb", marginTop: "4px" }}>📧 {duplicatePopup.existing.email}</div>}
+                {duplicatePopup.existing.phone && <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "2px" }}>📞 {duplicatePopup.existing.phone}</div>}
+              </div>
+            )}
+            <button
+              onClick={() => setDuplicatePopup({ show: false })}
+              style={{ width: "100%", padding: "11px", borderRadius: "10px", border: "none", background: "#2563eb", color: "white", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer" }}
+            >
+              Got It
+            </button>
+          </motion.div>
+        </div>
+      )}
 
       {/* Vendor Deep Profile Drawer */}
       <AnimatePresence>

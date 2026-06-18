@@ -11766,17 +11766,59 @@ app.get("/api/vendors", authenticate, async (req, res) => {
     }
 });
 
-// --- Admin: Create Vendor ---
+// --- Admin: Create OR Update Vendor (POST handles both) ---
 app.post("/api/vendors", authenticate, async (req, res) => {
     try {
         if (!isDbConnected) return res.status(503).json({ error: "Database is offline" });
-        const { name, company, contactPerson, ownerName, phone, altPhone, email, portalPassword, location, city, state, country, type, companyType, specialization, gstNo, panNo, website, contractStart, contractEnd, commissionRate, notes, assignedJobs, canSubmitCandidates } = req.body;
+        const { id, name, company, contactPerson, ownerName, phone, altPhone, email, portalPassword, location, city, state, country, type, companyType, specialization, gstNo, panNo, website, contractStart, contractEnd, commissionRate, notes, assignedJobs, canSubmitCandidates } = req.body;
 
         if (!name || !company) return res.status(400).json({ error: "Vendor name and company are required" });
 
+        // --- UPDATE existing vendor when id is provided ---
+        if (id && !isNaN(Number(id))) {
+            const existing = await Vendor.findByPk(Number(id));
+            if (!existing) return res.status(404).json({ error: "Vendor not found" });
+
+            const updates = {
+                name, company, contactPerson, ownerName, phone, altPhone, email,
+                location, city, state: state || null, country: country || "India",
+                type: type || "Agency", companyType, specialization, gstNo, panNo,
+                website, contractStart: contractStart || null, contractEnd: contractEnd || null,
+                commissionRate: commissionRate || 0, notes,
+                canSubmitCandidates: canSubmitCandidates !== false,
+            };
+            if (portalPassword && portalPassword.trim() !== "") {
+                updates.password = await bcrypt.hash(portalPassword, 10);
+            }
+            if (assignedJobs !== undefined) updates.assignedJobs = JSON.stringify(assignedJobs);
+
+            await existing.update(updates);
+            const updated = await Vendor.findByPk(Number(id), { attributes: { exclude: ["password"] } });
+            return res.json({ success: true, vendor: updated });
+        }
+
+        // --- CREATE new vendor ---
+        // Duplicate email/phone check before creating
+        if (email || phone) {
+            const dupWhere = [];
+            if (email && email.trim()) dupWhere.push({ email: email.trim() });
+            if (phone && phone.trim()) dupWhere.push({ phone: phone.trim() });
+            if (dupWhere.length > 0) {
+                const duplicate = await Vendor.findOne({ where: { [Op.or]: dupWhere } });
+                if (duplicate) {
+                    const dupField = (duplicate.email && duplicate.email === email) ? `email (${email})` : `mobile (${phone})`;
+                    return res.status(409).json({
+                        error: `A vendor already exists with this ${dupField}.`,
+                        code: "DUPLICATE_VENDOR",
+                        existingVendor: { name: duplicate.name, company: duplicate.company, email: duplicate.email, phone: duplicate.phone }
+                    });
+                }
+            }
+        }
+
         const vendorCode = await generateVendorCode();
         let hashedPassword = null;
-        if (portalPassword) {
+        if (portalPassword && portalPassword.trim() !== "") {
             hashedPassword = await bcrypt.hash(portalPassword, 10);
         }
 
