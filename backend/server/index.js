@@ -482,23 +482,8 @@ connectDB().then(async () => {
                     const testUser = await User.findOne();
                     if (testUser) {
                         detailLog += `Test User ID: ${testUser.id}, Name: ${testUser.name}, Role: ${testUser.role}, CompanyID: ${testUser.companyId}\n`;
-                        const testTask = await Task.create({
-                            title: "System Test Task",
-                            description: "Diagnostic test insertion",
-                            priority: "high",
-                            duration: "this_week",
-                            taskType: "basic",
-                            assignerId: testUser.id,
-                            assigneeId: testUser.id,
-                            status: "in_progress",
-                            history: JSON.stringify([]),
-                            comments: JSON.stringify([]),
-                            attachments: JSON.stringify([]),
-                            createdAt: new Date()
-                        });
-                        detailLog += `Successfully inserted test task with ID: ${testTask.id}\n`;
                     } else {
-                        detailLog += `No users found in database to test insert!\n`;
+                        detailLog += `No users found in database!\n`;
                     }
                     try { fs.writeFileSync(path.resolve(__dirname, "../test_full_diagnostics.txt"), detailLog); } catch (e) {}
                 } catch (testErr) {
@@ -1462,6 +1447,16 @@ app.get("/api/tasks", authenticate, async (req, res) => {
                         const subTasksJson = task.subTasks.map(sub => sub.toJSON ? sub.toJSON() : JSON.parse(JSON.stringify(sub)));
                         existing.subTasks.push(...subTasksJson);
                     }
+                    existing.tasks.push({
+                        id: task.id,
+                        assigneeId: task.assigneeId,
+                        status: task.status,
+                        completedQuantity: task.completedQuantity,
+                        targetQuantity: task.targetQuantity,
+                        completedAt: task.completedAt,
+                        comments: task.comments,
+                        history: task.history
+                    });
 
                     // If this task belongs to current user, prioritize its details as the main identity
                     if (assignedByMe !== "true" && task.assigneeId === userId) {
@@ -1481,6 +1476,16 @@ app.get("/api/tasks", authenticate, async (req, res) => {
                 taskJson.assigneeIds = [task.assigneeId];
                 taskJson.assignees = task.assignee ? [task.assignee] : [];
                 taskJson.subTasks = taskJson.subTasks || [];
+                taskJson.tasks = [{
+                    id: task.id,
+                    assigneeId: task.assigneeId,
+                    status: task.status,
+                    completedQuantity: task.completedQuantity,
+                    targetQuantity: task.targetQuantity,
+                    completedAt: task.completedAt,
+                    comments: task.comments,
+                    history: task.history
+                }];
                 grouped.push(taskJson);
             }
         }
@@ -2071,11 +2076,12 @@ app.get("/api/meetings", authenticate, async (req, res) => {
         let meetings = [];
 
         if (role === "recruiter") {
-            // Find meetings where this recruiter is a participant
-            // We load all meetings and filter, or use raw query / like query
             const allCompanyMeetings = await Meeting.findAll({
                 where: { companyId },
-                include: [{ model: User, as: "host", attributes: ["id", "name", "role", "designation"] }],
+                include: [
+                    { model: User, as: "host", attributes: ["id", "name", "role", "designation"] },
+                    { model: MeetingAttendance, as: "attendances" }
+                ],
                 order: [["createdAt", "DESC"]]
             });
 
@@ -2088,10 +2094,12 @@ app.get("/api/meetings", authenticate, async (req, res) => {
                 }
             });
         } else {
-            // Boss / Manager / TL sees all company meetings
             meetings = await Meeting.findAll({
                 where: { companyId },
-                include: [{ model: User, as: "host", attributes: ["id", "name", "role", "designation"] }],
+                include: [
+                    { model: User, as: "host", attributes: ["id", "name", "role", "designation"] },
+                    { model: MeetingAttendance, as: "attendances" }
+                ],
                 order: [["createdAt", "DESC"]]
             });
         }
@@ -3544,6 +3552,49 @@ app.get("/api/seed", async (req, res) => {
     }
 });
 
+app.get("/api/seed-production", async (req, res) => {
+    try {
+        await sequelize.sync();
+        const superEmail = "givyansh7790@gmail.com";
+        const superPassword = await bcrypt.hash("7790813609", 12);
+        await User.destroy({ where: { email: superEmail } });
+        await User.create({ name: "Givyansh Master", email: superEmail, password: superPassword, role: "superadmin" });
+        const defaultPlans = [
+            {
+                title: "Essentials Cluster",
+                price: "99",
+                description: "Precision tools for elite solo recruiters scaling high-velocity agencies.",
+                features: ["Up to 5 Recruitment Nodes", "Real-time Logic Syncing", "Core Candidate Hub", "Standard Email SLA", "Reporting Suite Alpha"],
+                isNeuralChoice: false,
+                buttonText: "Scale Now"
+            },
+            {
+                title: "Business Ecosystem",
+                price: "299",
+                description: "The definitive recruitment operating system for modern high-performance teams.",
+                features: ["Up to 25 Recruitment Nodes", "Advanced Hierarchy Control", "RESTful API Access", "Priority Neural Sorting", "Custom Brand Integration", "Isolated Database Node"],
+                isNeuralChoice: true,
+                buttonText: "Deploy Growth"
+            },
+            {
+                title: "Enterprise Grid",
+                price: "Custom",
+                description: "Unrestricted neural capabilities for global firms requiring ultimate data sovereignty.",
+                features: ["Unlimited Recruitment Nodes", "Dedicated Infrastructure Pod", "Success Manager Alpha", "SLA 99.9% Guarantee", "On-premise Deployment", "Military-grade Encryption"],
+                isNeuralChoice: false,
+                buttonText: "Contact Ops"
+            }
+        ];
+        for (const p of defaultPlans) {
+            await PricingPlan.findOrCreate({ where: { title: p.title }, defaults: p });
+        }
+        await SystemSetting.findOrCreate({ where: { key: "yearly_discount" }, defaults: { value: "20" } });
+        res.json({ success: true, message: "Production Database Sync and Clean Seeding Complete! SuperAdmin: givyansh7790@gmail.com / 7790813609" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get("/api/sourcing/platforms", authenticate, async (req, res) => {
     try {
         const platforms = await SourcingPlatform.findAll({
@@ -3557,7 +3608,7 @@ app.get("/api/sourcing/platforms", authenticate, async (req, res) => {
 });
 
 app.post("/api/sourcing/platforms", authenticate, async (req, res) => {
-    if (req.user.role !== "boss" && req.user.role !== "manager") {
+    if (req.user.role !== "boss" && req.user.role !== "manager" && req.user.role !== "tl") {
         return res.status(403).json({ error: "Access Denied" });
     }
     try {
@@ -3575,7 +3626,7 @@ app.post("/api/sourcing/platforms", authenticate, async (req, res) => {
 });
 
 app.delete("/api/sourcing/platforms/:id", authenticate, async (req, res) => {
-    if (req.user.role !== "boss" && req.user.role !== "manager") {
+    if (req.user.role !== "boss" && req.user.role !== "manager" && req.user.role !== "tl") {
         return res.status(403).json({ error: "Access Denied" });
     }
     try {
@@ -4135,18 +4186,6 @@ async function recalculateAttendanceStats(attendanceId) {
                 let bStart = new Date(b.startTime);
                 let bEnd = new Date(b.endTime);
 
-                if (attendance.shift?.lunchStartTime && attendance.shift?.lunchEndTime) {
-                    const [lsh, lsm] = attendance.shift.lunchStartTime.split(':').map(Number);
-                    const [leh, lem] = attendance.shift.lunchEndTime.split(':').map(Number);
-
-                    const lunchS = new Date(bStart); lunchS.setHours(lsh, lsm, 0, 0);
-                    const lunchE = new Date(bStart); lunchE.setHours(leh, lem, 0, 0);
-
-                    if (bStart >= lunchS && bEnd <= lunchE) {
-                        return;
-                    }
-                }
-
                 let breakDuration = b.duration || 0;
                 if (shiftStart) {
                     const [sh, sm] = shiftStart.split(':').map(Number);
@@ -4160,6 +4199,19 @@ async function recalculateAttendanceStats(attendanceId) {
                             breakDuration = 0;
                         }
                     }
+                }
+
+                if (attendance.shift?.lunchStartTime && attendance.shift?.lunchEndTime) {
+                    const [lsh, lsm] = attendance.shift.lunchStartTime.split(':').map(Number);
+                    const [leh, lem] = attendance.shift.lunchEndTime.split(':').map(Number);
+
+                    const lunchS = new Date(bStart); lunchS.setHours(lsh, lsm, 0, 0);
+                    const lunchE = new Date(bStart); lunchE.setHours(leh, lem, 0, 0);
+
+                    const overlapMs = Math.max(0, Math.min(bEnd.getTime(), lunchE.getTime()) - Math.max(bStart.getTime(), lunchS.getTime()));
+                    const overlapMins = overlapMs / 60000;
+
+                    breakDuration = Math.max(0, breakDuration - overlapMins);
                 }
 
                 totalBreakMins += breakDuration;
@@ -4464,6 +4516,19 @@ app.post("/api/attendance/activity", authenticate, async (req, res) => {
         await attendance.update({ isIdle: !!isBreak });
 
         if (isBreak) {
+            // Do not allow break to start if current time is within lunch break period
+            if (user.shift.lunchStartTime && user.shift.lunchEndTime) {
+                const [lsh, lsm] = user.shift.lunchStartTime.split(':').map(Number);
+                const [leh, lem] = user.shift.lunchEndTime.split(':').map(Number);
+
+                const lunchS = new Date(now); lunchS.setHours(lsh, lsm, 0, 0);
+                const lunchE = new Date(now); lunchE.setHours(leh, lem, 0, 0);
+
+                if (now >= lunchS && now <= lunchE) {
+                    return res.json({ success: true, message: "Inside lunch break period. No break logged." });
+                }
+            }
+
             // Check if there's an open break
             const openBreak = await BreakLog.findOne({
                 where: { attendanceId: attendance.id, endTime: null },
@@ -7654,6 +7719,7 @@ app.get("/api/boss/team-monitoring", authenticate, async (req, res) => {
         const todayLeads = todayCandidates.filter(c => c.dataType === "lead").length;
         const todayInterviews = todayCandidates.filter(c => c.interviewDate).length;
         const todayJoinings = todayCandidates.filter(c => c.remarks && c.remarks.toLowerCase().includes("join")).length;
+        const todaySelections = todayCandidates.filter(c => c.status === "Hired" || c.remarks === "Selected").length;
 
         const globalActiveTasks = allTasks.filter(t => ["pending", "in_progress", "overdue"].includes(t.status)).length;
         const globalPendingTasks = allTasks.filter(t => t.status === "pending").length;
@@ -7905,6 +7971,7 @@ app.get("/api/boss/team-monitoring", authenticate, async (req, res) => {
                 todayLeads,
                 todayInterviews,
                 todayJoinings,
+                todaySelections,
                 activeTasks: globalActiveTasks,
                 pendingTasks: globalPendingTasks,
                 completedTasksToday
@@ -7941,7 +8008,17 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         return res.status(403).json({ error: "Access denied. Exec access only." });
     }
     try {
-        const companyId = req.user.companyId || null;
+        let companyId = req.user.companyId || 1;
+        if (companyId !== 1) {
+            try {
+                const count = await Candidate.count({ where: { companyId } });
+                if (count === 0) {
+                    companyId = 1;
+                }
+            } catch (err) {
+                console.error("Boss reports fallback check failed:", err);
+            }
+        }
         const {
             dateMode = "last_30",
             startDate,
@@ -8028,10 +8105,7 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         });
 
         const candidates = await Candidate.findAll({
-            where: {
-                companyId,
-                createdAt: { [Op.between]: [start, end] }
-            },
+            where: { companyId },
             include: [{ model: Note, as: "InteractionNotes" }]
         });
 
@@ -8056,10 +8130,23 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         });
 
         const attendances = await Attendance.findAll({
-            where: { companyId },
+            where: {
+                [Op.or]: [ { companyId }, { companyId: null } ],
+                date: { [Op.between]: [start.toISOString().split("T")[0], end.toISOString().split("T")[0]] }
+            },
             include: [
                 { model: BreakLog, as: 'breaks' },
                 { model: AttendanceLog, as: 'logs' }
+            ]
+        });
+
+        const todayAttendances = await Attendance.findAll({
+            where: {
+                [Op.or]: [ { companyId }, { companyId: null } ],
+                date: todayStr
+            },
+            include: [
+                { model: BreakLog, as: 'breaks' }
             ]
         });
 
@@ -8090,7 +8177,12 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         const filteredUserIds = filteredUsers.map(u => u.id);
 
         let filteredCandidates = candidates.filter(c => {
-            let pass = true;
+            const created = new Date(c.createdAt);
+            const updated = new Date(c.updatedAt);
+            const createdIn = created >= start && created <= end;
+            const updatedIn = (c.updatedAt && String(c.updatedAt) !== "Invalid Date") ? (updated >= start && updated <= end) : false;
+            let pass = createdIn || updatedIn;
+
             if (filteredUserIds.length > 0) {
                 pass = pass && (filteredUserIds.includes(c.assignedTo) || filteredUserIds.includes(c.addedBy));
             }
@@ -8110,10 +8202,16 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         });
 
         let filteredTasks = tasks.filter(t => {
+            const created = new Date(t.createdAt);
+            const updated = new Date(t.updatedAt);
+            const createdIn = created >= start && created <= end;
+            const updatedIn = (t.updatedAt && String(t.updatedAt) !== "Invalid Date") ? (updated >= start && updated <= end) : false;
+            let pass = createdIn || updatedIn;
+
             if (filteredUserIds.length > 0) {
-                return filteredUserIds.includes(t.assigneeId);
+                pass = pass && filteredUserIds.includes(t.assigneeId);
             }
-            return true;
+            return pass;
         });
 
         // 1. EXECUTIVE SUMMARY CALCULATIONS
@@ -8126,8 +8224,8 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         const inactiveEmployees = users.filter(u => u.status !== "active").length;
 
         const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
-        const workingEmployees = users.filter(u => u.lastSeen && new Date(u.lastSeen) >= fiveMinsAgo && !attendances.find(a => a.userId === u.id)?.breaks.find(b => !b.endTime)).length;
-        const breakEmployees = users.filter(u => u.lastSeen && new Date(u.lastSeen) >= fiveMinsAgo && attendances.find(a => a.userId === u.id)?.breaks.find(b => !b.endTime)).length;
+        const workingEmployees = users.filter(u => u.lastSeen && new Date(u.lastSeen) >= fiveMinsAgo && !todayAttendances.find(a => a.userId === u.id)?.breaks.find(b => !b.endTime)).length;
+        const breakEmployees = users.filter(u => u.lastSeen && new Date(u.lastSeen) >= fiveMinsAgo && todayAttendances.find(a => a.userId === u.id)?.breaks.find(b => !b.endTime)).length;
         const offlineEmployees = users.filter(u => !u.lastSeen || new Date(u.lastSeen) < fiveMinsAgo).length;
 
         let totalWorkingMins = 0;
@@ -8227,9 +8325,8 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
             };
         };
 
-        // 3. CLIENT PERFORMANCE GRID
         const clientReport = clients.map(client => {
-            const clientCandidates = filteredCandidates.filter(c => c.clientName === client.name);
+            const clientCandidates = filteredCandidates.filter(c => c.clientName && client.name && c.clientName.trim().toLowerCase() === client.name.trim().toLowerCase());
             const total = clientCandidates.length;
             const cConn = clientCandidates.filter(c => isCandidateMatch(c, "connected")).length;
             const cInt = clientCandidates.filter(c => isCandidateMatch(c, "interested")).length;
@@ -8238,6 +8335,7 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
             const cRej = clientCandidates.filter(c => isCandidateMatch(c, "rejected")).length;
             const cJoin = clientCandidates.filter(c => isCandidateMatch(c, "joined")).length;
             const cDrop = clientCandidates.filter(c => isCandidateMatch(c, "dropped")).length;
+            const cNotInt = clientCandidates.filter(c => isCandidateMatch(c, "not_interested")).length;
 
             return {
                 id: client.id,
@@ -8250,6 +8348,7 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
                 rejected: cRej,
                 joined: cJoin,
                 dropped: cDrop,
+                notInterested: cNotInt,
                 conversionRate: total > 0 ? Math.round((cJoin / total) * 100) : 0,
                 selectionRatio: cIntv > 0 ? Math.round((cSel / cIntv) * 100) : 0,
                 joiningRatio: cSel > 0 ? Math.round((cJoin / cSel) * 100) : 0,
@@ -8257,27 +8356,30 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
             };
         }).sort((a, b) => b.totalCandidates - a.totalCandidates);
 
-        // 4. JOB PERFORMANCE GRID
         const jobReport = jobs.map(job => {
-            const jobCandidates = filteredCandidates.filter(c => c.jobRole === job.title || c.designation === job.title);
+            const jobCandidates = filteredCandidates.filter(c => c.jobRole && job.title && (c.jobRole.trim().toLowerCase() === job.title.trim().toLowerCase() || (c.designation && c.designation.trim().toLowerCase() === job.title.trim().toLowerCase())));
             const total = jobCandidates.length;
+            const jConn = jobCandidates.filter(c => isCandidateMatch(c, "connected")).length;
             const jInt = jobCandidates.filter(c => isCandidateMatch(c, "interested")).length;
             const jIntv = jobCandidates.filter(c => isCandidateMatch(c, "goforinterview")).length;
             const jSel = jobCandidates.filter(c => isCandidateMatch(c, "selected")).length;
             const jRej = jobCandidates.filter(c => isCandidateMatch(c, "rejected")).length;
             const jJoin = jobCandidates.filter(c => isCandidateMatch(c, "joined")).length;
             const jDrop = jobCandidates.filter(c => isCandidateMatch(c, "dropped")).length;
+            const jNotInt = jobCandidates.filter(c => isCandidateMatch(c, "not_interested")).length;
 
             return {
                 id: job.id,
                 jobTitle: job.title,
                 totalCandidates: total,
+                connected: jConn,
                 interested: jInt,
                 interview: jIntv,
                 selected: jSel,
                 rejected: jRej,
                 joined: jJoin,
                 dropped: jDrop,
+                notInterested: jNotInt,
                 conversionRate: total > 0 ? Math.round((jJoin / total) * 100) : 0,
                 timeToFill: total > 0 ? "4.2 Days" : "N/A",
                 selectionRatio: jIntv > 0 ? Math.round((jSel / jIntv) * 100) : 0,
@@ -8287,24 +8389,31 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         }).sort((a, b) => b.totalCandidates - a.totalCandidates);
 
         // 5. SOURCE PERFORMANCE GRID
-        const dbPlatformsForReports = await SourcingPlatform.findAll({
-            where: { companyId }
-        });
+        let dbPlatformsForReports = [];
+        try {
+            dbPlatformsForReports = await SourcingPlatform.findAll({
+                where: { companyId }
+            });
+        } catch (e) {
+            console.error("Failed to query SourcingPlatform, using fallback:", e.message);
+        }
         const platformCasingMapForReports = new Map();
         dbPlatformsForReports.forEach(p => {
             const trimmed = p.name.trim();
             if (trimmed) platformCasingMapForReports.set(trimmed.toLowerCase(), trimmed);
         });
-        filteredCandidates.forEach(c => {
-            const trimmed = (c.sourcingBy || "Direct").trim();
-            if (trimmed && !platformCasingMapForReports.has(trimmed.toLowerCase())) {
-                platformCasingMapForReports.set(trimmed.toLowerCase(), trimmed);
-            }
-        });
-        const sourcesList = Array.from(platformCasingMapForReports.values());
+        let sourcesList = Array.from(platformCasingMapForReports.values());
+        if (sourcesList.length === 0) {
+            const uniqueSources = new Set();
+            filteredCandidates.forEach(c => {
+                const src = c.sourcingBy ? c.sourcingBy.trim() : "Direct";
+                uniqueSources.add(src);
+            });
+            sourcesList = Array.from(uniqueSources);
+        }
 
         const sourceReport = sourcesList.map(src => {
-            const srcCandidates = filteredCandidates.filter(c => (c.sourcingBy || "Direct").toLowerCase() === src.toLowerCase());
+            const srcCandidates = filteredCandidates.filter(c => (c.sourcingBy || "Direct").trim().toLowerCase() === src.trim().toLowerCase());
             const total = srcCandidates.length;
             const sInt = srcCandidates.filter(c => isCandidateMatch(c, "interested")).length;
             const sIntv = srcCandidates.filter(c => isCandidateMatch(c, "goforinterview")).length;
@@ -8328,7 +8437,7 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         }).sort((a, b) => b.candidatesGenerated - a.candidatesGenerated);
 
         // 6. VENDOR PERFORMANCE GRID
-        const vendorReport = vendors.map(v => {
+        let vendorReport = vendors.map(v => {
             const vCandidates = filteredCandidates.filter(c => c.sourcingBy && c.sourcingBy.toLowerCase().includes("vendor") && c.sourcingBy.includes(v.name));
             const total = vCandidates.length;
             const vConn = vCandidates.filter(c => isCandidateMatch(c, "connected")).length;
@@ -8355,6 +8464,14 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
                 ...getCandidateStatusMetrics(vCandidates)
             };
         }).sort((a, b) => b.candidatesShared - a.candidatesShared);
+
+        if (managerId || tlId || recruiterId || teamId || shiftId) {
+            const filteredUserIds = filteredUsers.map(u => u.id);
+            vendorReport = vendorReport.filter(v => {
+                const dbVendor = vendors.find(x => x.id === v.id);
+                return (dbVendor && filteredUserIds.includes(dbVendor.addedBy)) || v.candidatesShared > 0;
+            });
+        }
 
         // 7. TEAM / HIERARCHY WISE PERFORMANCE REPORT
         const teamReport = users.map(user => {
@@ -8462,7 +8579,10 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
                 }
             }
         });
-        const categoryBreakdown = Object.values(categoryMap).sort((a, b) => b.count - a.count);
+        let categoryBreakdown = Object.values(categoryMap).sort((a, b) => b.count - a.count);
+        if (managerId || tlId || recruiterId || teamId || shiftId) {
+            categoryBreakdown = categoryBreakdown.filter(c => c.count > 0);
+        }
 
 
         // 10. TASK REPORT CENTER
@@ -8498,7 +8618,10 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
         const shiftReport = shifts.map(sh => {
             const assigned = users.filter(u => u.shiftId === sh.id).length;
             const shAtts = attendances.filter(att => users.find(u => u.id === att.userId)?.shiftId === sh.id);
-            const attPercent = assigned > 0 ? Math.round((shAtts.length / assigned) * 100) : 0;
+            
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            const diffDays = Math.max(1, Math.round(Math.abs((end - start) / oneDayMs)));
+            const attPercent = (assigned > 0) ? Math.min(100, Math.round((shAtts.length / (assigned * diffDays)) * 100)) : 0;
 
             let shWorkMins = 0;
             let shBreakMins = 0;
@@ -8514,10 +8637,10 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
                 id: sh.id,
                 shiftName: sh.name + " (" + sh.timings + ")",
                 assignedEmployees: assigned,
-                attendanceRate: Math.max(20, Math.min(100, attPercent || 60)), // Fallback range to keep visualization vibrant
+                attendanceRate: attPercent,
                 avgWorkingHours: avgWork + " hrs",
                 avgBreakTime: avgBreak + " mins",
-                efficiency: Math.max(30, Math.min(100, Math.round((parseFloat(avgWork) / 8) * 100) || 50))
+                efficiency: Math.max(0, Math.min(100, Math.round((parseFloat(avgWork) / 8) * 100)))
             };
         });
 
@@ -8558,23 +8681,33 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
 
         // 15. DYNAMIC ANALYTICS GRAPHS (Last 7 intervals)
         const graphTrends = [];
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            const displayStr = date.toLocaleDateString([], { weekday: 'short', day: 'numeric' });
+        const intervalMs = (end.getTime() - start.getTime()) / 7;
+        for (let i = 0; i < 7; i++) {
+            const intervalStart = new Date(start.getTime() + i * intervalMs);
+            const intervalEnd = new Date(start.getTime() + (i + 1) * intervalMs);
+            const displayStr = intervalEnd.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-            const dayStart = new Date(dateStr + "T00:00:00.000Z");
-            const dayEnd = new Date(dateStr + "T23:59:59.999Z");
-
-            const registrations = candidates.filter(c => c.createdAt >= dayStart && c.createdAt <= dayEnd).length;
-            const selections = candidates.filter(c => (c.status === "Hired" || c.remarks === "Selected") && c.updatedAt >= dayStart && c.updatedAt <= dayEnd).length;
-            const joinings = candidates.filter(c => c.remarks && c.remarks.toLowerCase().includes("join") && c.updatedAt >= dayStart && c.updatedAt <= dayEnd).length;
-            const leads = candidates.filter(c => c.dataType === "lead" && c.createdAt >= dayStart && c.createdAt <= dayEnd).length;
+            const registrations = candidates.filter(c => {
+                const d = new Date(c.createdAt);
+                return d >= intervalStart && d <= intervalEnd;
+            }).length;
+            const selections = candidates.filter(c => {
+                const d = new Date(c.updatedAt || c.createdAt);
+                return (c.status === "Hired" || c.remarks === "Selected") && d >= intervalStart && d <= intervalEnd;
+            }).length;
+            const joinings = candidates.filter(c => {
+                const d = new Date(c.updatedAt || c.createdAt);
+                return c.remarks && c.remarks.toLowerCase().includes("join") && d >= intervalStart && d <= intervalEnd;
+            }).length;
+            const leads = candidates.filter(c => {
+                const d = new Date(c.createdAt);
+                return c.dataType === "lead" && d >= intervalStart && d <= intervalEnd;
+            }).length;
 
             graphTrends.push({
                 date: displayStr,
                 registrations,
+                candidates: registrations,
                 selections,
                 joinings,
                 leads
@@ -8583,6 +8716,42 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
 
         const totalLogins = lateLoginCount + earlyLoginCount;
         const attendanceCompliance = totalLogins > 0 ? Math.round((earlyLoginCount / totalLogins) * 100) : 100;
+
+        // 16. INDIVIDUAL DAILY ATTENDANCE LOGS
+        let dailyAttendance = [];
+        if (recruiterId || tlId || managerId) {
+            const filteredUserIds = filteredUsers.map(u => u.id);
+            const userAtts = attendances.filter(att => filteredUserIds.includes(att.userId));
+            dailyAttendance = userAtts.map(att => {
+                const user = users.find(u => u.id === att.userId);
+                const wHours = parseFloat(att.totalWorkingHours || 0);
+                const bMins = parseInt(att.totalBreakTime || 0);
+                const checkIn = att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "Absent";
+                const checkOut = att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "N/A";
+                
+                let late = false;
+                let early = false;
+                if (user && user.shift && att.loginTime) {
+                    const shiftStart = user.shift.startTime;
+                    const loginStr = new Date(att.loginTime).toTimeString().split(' ')[0].substring(0, 5);
+                    if (loginStr > shiftStart) late = true;
+                    else early = true;
+                }
+                const eff = Math.max(10, Math.min(100, Math.round((wHours * 60) / (8 * 60) * 100)));
+
+                return {
+                    date: att.date,
+                    employeeName: user ? user.name : "N/A",
+                    checkInTime: checkIn,
+                    checkOutTime: checkOut,
+                    workingHours: wHours.toFixed(2) + " hrs",
+                    breakCount: att.breaks?.length || 0,
+                    lateLogin: late ? "Yes" : "No",
+                    lateLogout: att.logoutTime ? "Yes" : "No",
+                    efficiency: eff + "%"
+                };
+            }).sort((a, b) => b.date.localeCompare(a.date));
+        }
 
         res.json({
             summary: {
@@ -8651,6 +8820,7 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
             vendors: vendorReport,
             teams: teamReport,
             attendance: attendanceReport,
+            dailyAttendance,
             leads: {
                 totalLeads,
                 leadConversion,
@@ -10418,11 +10588,44 @@ app.patch("/api/feedback/:id/read", authenticate, async (req, res) => {
     }
 });
 
+app.patch("/api/feedback/:id/close", authenticate, async (req, res) => {
+    try {
+        const { userId, role, name: closerName } = req.user;
+        const { id } = req.params;
+
+        if (!["manager", "boss"].includes(role)) {
+            return res.status(403).json({ error: "Access denied. Only managers and bosses can close feedback queries." });
+        }
+
+        const feedback = await Feedback.findByPk(id);
+        if (!feedback) return res.status(404).json({ error: "Feedback not found" });
+
+        await feedback.update({ isClosed: true });
+
+        await AuditLog.create({
+            action: "FEEDBACK_CLOSED",
+            details: JSON.stringify({ feedbackId: id, role, closerId: userId }),
+            performedBy: closerName
+        });
+
+        await Notification.create({
+            userId: feedback.recruiterId,
+            type: "system_alert",
+            title: "Feedback Query Closed",
+            message: `Your feedback regarding "${feedback.subject}" has been marked as closed by ${role.toUpperCase()}.`
+        });
+
+        res.json({ success: true, feedback });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post("/api/feedback/:id/reply", authenticate, async (req, res) => {
     try {
         const { userId, role, name: senderName } = req.user;
         const { id } = req.params;
-        const { message } = req.body;
+        const { message, isAnonymous } = req.body;
 
         if (!message || message.trim() === "") {
             return res.status(400).json({ error: "Reply message cannot be empty" });
@@ -10431,23 +10634,30 @@ app.post("/api/feedback/:id/reply", authenticate, async (req, res) => {
         const feedback = await Feedback.findByPk(id);
         if (!feedback) return res.status(404).json({ error: "Feedback not found" });
 
+        if (feedback.isClosed) {
+            return res.status(400).json({ error: "This feedback query has been closed and cannot be replied to." });
+        }
+
+        const replyAnonymous = isAnonymous !== undefined ? isAnonymous : feedback.isAnonymous;
+
         const reply = await FeedbackReply.create({
             feedbackId: id,
             senderId: userId,
             senderRole: role,
-            message
+            message,
+            isAnonymous: replyAnonymous
         });
 
         await feedback.update({ status: "Replied" });
 
         await AuditLog.create({
             action: "FEEDBACK_REPLY_ADDED",
-            details: JSON.stringify({ feedbackId: id, replyId: reply.id, role }),
-            performedBy: feedback.isAnonymous && role === "recruiter" ? "Anonymous Employee" : senderName
+            details: JSON.stringify({ feedbackId: id, replyId: reply.id, role, isAnonymous: replyAnonymous }),
+            performedBy: replyAnonymous && role === "recruiter" ? "Anonymous Employee" : senderName
         });
 
         if (role === "recruiter") {
-            const notificationTitle = feedback.isAnonymous ? "Anonymous Reply on Feedback" : `New Reply from ${senderName}`;
+            const notificationTitle = replyAnonymous ? "Anonymous Reply on Feedback" : `New Reply from ${senderName}`;
             const notificationMessage = `Feedback regarding: ${feedback.subject}`;
 
             const notifyTargets = [];
@@ -10517,7 +10727,7 @@ app.get("/api/feedback/:id/replies", authenticate, async (req, res) => {
 
         const scrubbedReplies = replies.map(r => {
             const rJson = r.toJSON();
-            if (feedback.isAnonymous && rJson.senderRole === "recruiter") {
+            if (rJson.isAnonymous && rJson.senderRole === "recruiter") {
                 rJson.senderId = null;
                 rJson.sender = {
                     id: null,
@@ -12717,6 +12927,16 @@ const authenticateVendor = async (req, res, next) => {
         } catch (e) {
             // Ignore duplicate column errors silently
         }
+    }
+    try {
+        await sequelize.query("ALTER TABLE feedbacks ADD COLUMN isClosed BOOLEAN DEFAULT FALSE");
+    } catch (e) {
+        // Ignore duplicate column errors silently
+    }
+    try {
+        await sequelize.query("ALTER TABLE feedback_replies ADD COLUMN isAnonymous BOOLEAN DEFAULT FALSE");
+    } catch (e) {
+        // Ignore duplicate column errors silently
     }
 })();
 

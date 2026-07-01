@@ -1,15 +1,11 @@
 import fs from "fs";
-import path from "path";
 
-const content = fs.readFileSync("c:\\Users\\goswa\\OneDrive\\Desktop\\Fast RMS\\Fast RMS\\server\\index.js", "utf8");
+const content = fs.readFileSync("./backend/server/index.js", "utf-8");
 const lines = content.split("\n");
-let output = "";
 
-lines.forEach((line, index) => {
-    if (line.includes("/api/tasks") || line.includes("Task.") || line.includes("TaskAssignment")) {
-        output += `Line ${index + 1}: ${line.trim()}\n`;
+console.log("Searching for queries containing 'Task.' or 'Task.findAll' or 'Task.findOne'...");
+lines.forEach((line, idx) => {
+    if (line.includes("Task.") && (line.includes("find") || line.includes("query") || line.includes("where"))) {
+        console.log(`${idx + 1}: ${line.trim()}`);
     }
 });
-
-fs.writeFileSync("c:\\Users\\goswa\\OneDrive\\Desktop\\Fast RMS\\Fast RMS\\tasks_output.txt", output);
-console.log("Written output to tasks_output.txt");

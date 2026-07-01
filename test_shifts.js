@@ -1,10 +1,10 @@
-import { sequelize } from "./server/db.js";
-import Shift from "./server/models/Shift.js";
-import User from "./server/models/User.js";
+import connectDB, { sequelize } from "./backend/server/db.js";
+import Shift from "./backend/server/models/Shift.js";
+import User from "./backend/server/models/User.js";
 
 async function main() {
     try {
-        await sequelize.authenticate();
+        await connectDB();
         console.log("DB connected successfully!");
 
         const shifts = await Shift.findAll();

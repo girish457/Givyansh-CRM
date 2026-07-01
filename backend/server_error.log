@@ -1,0 +1,63 @@
+[2026-06-19T16:29:15.239Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
+[2026-06-19T16:29:22.854Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
+[2026-06-19T16:29:56.230Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
+[2026-06-19T16:30:04.103Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
+[2026-06-20T05:50:42.548Z] Path: /api/chat/read | Error: {"error":"lastReadMessageId is not defined"}
+[2026-06-22T09:50:53.217Z] Path: /api/attendance/punch-in | Error: {"error":"Validation error"}
+[2026-06-22T12:14:17.891Z] Path: /api/attendance/punch-in | Error: {"error":"Validation error"}
+[2026-06-29T10:52:42.916Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T10:56:22.654Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T10:56:22.751Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:00:43.303Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:00:44.038Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:02:25.849Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:02:26.632Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:03:08.550Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:03:08.811Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:14:20.040Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:14:20.374Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:14:29.668Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:14:29.983Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:26.181Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:27.006Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:27.298Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:27.755Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:29.139Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:29.649Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:30.588Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:31.614Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:32.568Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:33.713Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:34.671Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:36.515Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:37.234Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:37.575Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:38.651Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:39.661Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:40.611Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:41.555Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:42.736Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:43.571Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:44.527Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:45.562Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:47.095Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:47.602Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:48.603Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:49.573Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:50.563Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:51.665Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:56.790Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:57.200Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:58.047Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:58.700Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:16:59.519Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:17:00.468Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:17:01.483Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:17:02.445Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:17:03.476Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-29T11:17:04.446Z] Path: /api/boss/reports-hub | Error: {"error":"Unknown column 'Task.updatedAt' in 'where clause'"}
+[2026-06-30T09:42:21.406Z] Path: /api/attendance/punch-in | Error: {"error":"Validation error"}
+[2026-06-30T10:34:05.216Z] Path: /api/attendance/punch-in | Error: {"error":"Validation error"}
+[2026-06-30T11:14:59.124Z] Path: /api/attendance/punch-in | Error: {"error":"connect ETIMEDOUT"}
+[2026-06-30T12:02:51.339Z] Path: /api/attendance/punch-in | Error: {"error":"Validation error"}
+[2026-06-30T12:04:44.506Z] Path: /api/attendance/punch-in | Error: {"error":"Validation error"}

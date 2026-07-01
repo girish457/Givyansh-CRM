@@ -40,7 +40,9 @@ import {
   LucideAward,
   LucideFilter,
   LucideChevronDown,
-  LucideChevronUp
+  LucideChevronUp,
+  LucideEye,
+  LucideLoader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TeamManagement from "@/components/dashboard/TeamManagement";
@@ -161,9 +163,19 @@ export default function BossDashboard() {
       if (res.ok) {
         const data = await res.json();
         setUserProfile(data);
+      } else {
+        throw new Error("API failed");
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
+      const active = localStorage.getItem("crm_active_user") || localStorage.getItem("givyansh_active_user");
+      if (active) {
+        try {
+          setUserProfile(JSON.parse(active));
+        } catch (e) {
+          console.error("Failed to parse active user JSON", e);
+        }
+      }
     }
   };
 
@@ -469,6 +481,29 @@ const SectionFilterControl = ({
 
 const DashboardHome = ({ candidates = [], userProfile = null, navigate }: { candidates: any[]; userProfile: any; navigate: any }) => {
   const [monitoring, setMonitoring] = useState<any>(null);
+  // Expand / Collapse State for Hierarchy View
+  const [expandedManagers, setExpandedManagers] = useState<Record<number, boolean>>({});
+  const [expandedTls, setExpandedTls] = useState<Record<number, boolean>>({});
+  const [allExpanded, setAllExpanded] = useState(true);
+
+  const toggleAllNodes = () => {
+    const nextState = !allExpanded;
+    setAllExpanded(nextState);
+    
+    const mgrMap: Record<number, boolean> = {};
+    const tlMap: Record<number, boolean> = {};
+    
+    const managers = monitoring?.tree || [];
+    managers.forEach((m: any) => {
+      mgrMap[m.id] = nextState;
+      m.tls.forEach((t: any) => {
+        tlMap[t.id] = nextState;
+      });
+    });
+    
+    setExpandedManagers(mgrMap);
+    setExpandedTls(tlMap);
+  };
   const [reports, setReports] = useState<any>(null);
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [policies, setPolicies] = useState<any[]>([]);
@@ -701,7 +736,11 @@ const DashboardHome = ({ candidates = [], userProfile = null, navigate }: { cand
   const toggleSection = (key: string) => {
     setCollapsedSections((prev) => {
       const updated = { ...prev, [key]: !prev[key] };
-      localStorage.setItem("fast_rms_boss_collapsed_sections_v3", JSON.stringify(updated));
+      try {
+        localStorage.setItem("fast_rms_boss_collapsed_sections_v3", JSON.stringify(updated));
+      } catch (e) {
+        console.error("Failed to save collapsed sections to localStorage:", e);
+      }
       return updated;
     });
   };
@@ -1026,199 +1065,311 @@ const DashboardHome = ({ candidates = [], userProfile = null, navigate }: { cand
     const managers = monitoring?.tree || [];
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", background: "#f8fafc", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.02)" }}>
-        {/* Boss Node */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px", perspective: "1000px" }}>
-          <div 
-            onClick={() => handleEmployeeDrillDown({ id: userProfile?.id, name: userProfile?.name || "CEO", role: "boss" })}
-            style={{
-              background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-              border: "1px solid rgba(245, 158, 11, 0.4)",
-              borderRadius: "12px",
-              padding: "8px 24px",
-              textAlign: "center",
-              boxShadow: "0 8px 24px -4px rgba(15, 23, 42, 0.25), 0 4px 12px -2px rgba(15, 23, 42, 0.15), inset 0 1px 1px 0 rgba(255,255,255,0.1)",
-              cursor: "pointer",
-              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-4px) scale(1.03) rotateX(3deg)";
-              e.currentTarget.style.boxShadow = "0 20px 35px -8px rgba(15, 23, 42, 0.4), 0 10px 20px -6px rgba(15, 23, 42, 0.25), 0 0 12px rgba(245, 158, 11, 0.2)";
-              e.currentTarget.style.borderColor = "#fbbf24";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0) scale(1) rotateX(0)";
-              e.currentTarget.style.boxShadow = "0 8px 24px -4px rgba(15, 23, 42, 0.25), 0 4px 12px -2px rgba(15, 23, 42, 0.15), inset 0 1px 1px 0 rgba(255,255,255,0.1)";
-              e.currentTarget.style.borderColor = "rgba(245, 158, 11, 0.4)";
-            }}
-          >
-            <strong style={{ color: "#ffffff", fontSize: "0.88rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>👑 {userProfile?.name || "Ultimate CEO"}</strong>
-            <span style={{ 
-              display: "inline-block", 
-              fontSize: "0.6rem", 
-              background: "rgba(245, 158, 11, 0.15)", 
-              color: "#fbbf24", 
-              padding: "2px 8px", 
-              borderRadius: "20px", 
-              border: "1px solid rgba(245, 158, 11, 0.3)", 
-              marginTop: "4px", 
-              fontWeight: 800, 
-              letterSpacing: "0.5px"
-            }}>BOSS (CEO)</span>
-          </div>
-        </div>
+        
+        {/* Style Tag inside the render block for layout encapsulation */}
+        <style>{`
+          .hierarchy-executive-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #0c2340;
+            padding: 6px 14px;
+            border-radius: 6px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(15,23,42,0.12);
+            min-width: 130px;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: 1.5px solid #0a1d37;
+          }
+          .hierarchy-executive-card:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 14px rgba(12,35,64,0.25);
+          }
+          .hierarchy-manager-card {
+            background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+            border: 1.5px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 6px 10px;
+            width: 130px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(37,99,235,0.03);
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .hierarchy-manager-card:hover {
+            transform: translateY(-1.5px);
+            border-color: #3b82f6;
+            box-shadow: 0 6px 12px rgba(37,99,235,0.06);
+          }
+          .hierarchy-tl-card {
+            background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+            border: 1.5px solid #e9d5ff;
+            border-radius: 8px;
+            padding: 5px 8px;
+            width: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(139,92,246,0.02);
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .hierarchy-tl-card:hover {
+            transform: translateY(-1.5px);
+            border-color: #8b5cf6;
+            box-shadow: 0 5px 10px rgba(139,92,246,0.05);
+          }
+          .hierarchy-recruiter-node {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            transition: all 0.2s ease;
+          }
+          .hierarchy-recruiter-node:hover {
+            transform: scale(1.1);
+          }
+          .hierarchy-recruiter-node.online {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            color: #047857;
+          }
+          .hierarchy-recruiter-node.online:hover {
+            box-shadow: 0 3px 8px rgba(16,185,129,0.15);
+          }
+          .hierarchy-recruiter-node.offline {
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            color: #475569;
+          }
+          .hierarchy-recruiter-node.offline:hover {
+            box-shadow: 0 3px 8px rgba(100,116,139,0.18);
+          }
+          .hierarchy-line-vertical {
+            width: 2px;
+            height: 10px;
+            background-color: #a855f7;
+          }
+        `}</style>
 
-        {/* Tree level connector line */}
-        <div style={{ height: "2px", background: "linear-gradient(90deg, transparent, #cbd5e1 20%, #cbd5e1 80%, transparent)", width: "60%", margin: "0 auto 12px" }}></div>
-
-        {/* Managers list */}
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", width: "100%" }}>
-          {managers.map((m: any) => (
-            <div 
-              key={m.id} 
-              style={{ 
-                flex: "1", 
-                minWidth: "220px", 
-                background: "#ffffff", 
-                borderRadius: "14px", 
-                padding: "14px", 
-                border: "1px solid #e2e8f0", 
-                borderLeft: "5px solid #2563eb",
-                boxShadow: "0 10px 20px -8px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.03), inset 0 1px 1px 0 rgba(255,255,255,1)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-4px) scale(1.015)";
-                e.currentTarget.style.boxShadow = "0 18px 28px -8px rgba(37, 99, 235, 0.12), 0 8px 12px -4px rgba(37, 99, 235, 0.06)";
-                e.currentTarget.style.borderColor = "#2563eb";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0) scale(1)";
-                e.currentTarget.style.boxShadow = "0 10px 20px -8px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.03), inset 0 1px 1px 0 rgba(255,255,255,1)";
-                e.currentTarget.style.borderColor = "#e2e8f0";
-              }}
-            >
+        {/* Visual Tree Scroll Container */}
+        <div style={{ width: "100%", overflowX: "auto", padding: "10px 0" }} className="scrollbar-premium">
+          <div style={{ display: "table", margin: "0 auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "max-content", padding: "0 16px" }}>
+            
+              {/* Level 1: Root Node (Executive / CEO) */}
               <div 
-                onClick={() => handleEmployeeDrillDown(m)}
-                style={{
-                  background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  padding: "6px 12px",
-                  textAlign: "center",
-                  marginBottom: "12px",
-                  cursor: "pointer",
-                  boxShadow: "inset 0 1px 0 0 #ffffff"
-                }}
+                className="hierarchy-executive-card"
+                onClick={() => handleEmployeeDrillDown({ id: userProfile?.id, name: userProfile?.name || "CEO", role: "boss" })}
+                style={{ cursor: "pointer" }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                  <span style={{ color: m.status === "active" ? "#10b981" : m.status === "break" ? "#d97706" : "#64748b", fontSize: "0.85rem" }}>●</span>
-                  <strong style={{ fontSize: "0.82rem", color: "#1e3a8a" }}>💼 {m.name}</strong>
-                </div>
-                <div style={{ fontSize: "0.62rem", color: "#64748b", marginTop: "2px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Manager</div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 900, letterSpacing: "0.5px" }}>EXECUTIVE HQ</span>
+                <span style={{ fontSize: "0.6rem", color: "#94a3b8", fontWeight: 700, marginTop: "2px" }}>({userProfile?.name || "THE BOSS"})</span>
               </div>
 
-              {/* TLs level */}
-              {m.tls && m.tls.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderLeft: "2px solid #cbd5e1", paddingLeft: "14px", marginLeft: "6px", marginTop: "4px" }}>
-                  {m.tls.map((t: any) => (
-                    <div key={t.id} style={{ position: "relative" }}>
-                      {/* Horizontal tree connector branch */}
-                      <div style={{ position: "absolute", left: "-16px", top: "18px", width: "14px", height: "2px", background: "#cbd5e1" }}></div>
-                      
-                      <div 
-                        style={{ 
-                          background: "#ffffff", 
-                          borderRadius: "10px", 
-                          padding: "8px 10px", 
-                          border: "1px solid #e2e8f0",
-                          borderLeft: "4px solid #f97316",
-                          boxShadow: "0 4px 10px -4px rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.02)",
-                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-3px) scale(1.01)";
-                          e.currentTarget.style.boxShadow = "0 12px 20px -6px rgba(249, 115, 22, 0.15), 0 4px 8px -3px rgba(249, 115, 22, 0.08)";
-                          e.currentTarget.style.borderColor = "#f97316";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0) scale(1)";
-                          e.currentTarget.style.boxShadow = "0 4px 10px -4px rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.02)";
-                          e.currentTarget.style.borderColor = "#e2e8f0";
-                        }}
-                      >
-                        <div 
-                          onClick={() => handleEmployeeDrillDown(t)}
-                          style={{ 
-                            fontSize: "0.76rem", 
-                            color: "#1e293b", 
-                            cursor: "pointer", 
-                            display: "flex", 
-                            alignItems: "center", 
-                            justifyContent: "space-between",
-                            borderBottom: "1px solid #f1f5f9",
-                            paddingBottom: "4px",
-                            marginBottom: "6px"
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                            <span style={{ color: t.status === "active" ? "#10b981" : t.status === "break" ? "#d97706" : "#64748b", fontSize: "0.75rem" }}>●</span>
-                            <strong style={{ color: "#334155" }}>⚡ {t.name}</strong>
-                          </div>
-                          <span style={{ fontSize: "0.58rem", color: "#f97316", background: "rgba(249, 115, 22, 0.1)", padding: "1px 5px", borderRadius: "10px", fontWeight: 700 }}>TL</span>
+              {/* Vertical Line down from Executive */}
+              {managers.length > 0 && (
+                <div className="hierarchy-line-vertical" />
+              )}
+
+              {/* Level 2: Managers Row */}
+              {managers.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "center", position: "relative" }}>
+                  {managers.map((manager: any, mIdx: number) => {
+                    const isManagerExpanded = expandedManagers[manager.id] ?? true;
+
+                    return (
+                      <div key={manager.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", padding: "0 12px" }}>
+                        
+                        {/* Horizontal connection line to meet top vertical line */}
+                        <div style={{ display: "flex", width: "100%", height: "10px", position: "relative" }}>
+                          <div style={{ flex: 1, borderTop: mIdx > 0 ? "2px solid #a855f7" : "none", borderRight: "2px solid #a855f7" }} />
+                          <div style={{ flex: 1, borderTop: mIdx < managers.length - 1 ? "2px solid #a855f7" : "none" }} />
                         </div>
 
-                        {/* Recruiters level */}
-                        {t.recruiters && t.recruiters.length > 0 && (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "6px", borderLeft: "2px solid #cbd5e1", paddingLeft: "14px", marginLeft: "6px", marginTop: "6px" }}>
-                            {t.recruiters.map((r: any) => (
-                              <div key={r.id} style={{ position: "relative" }}>
-                                {/* Horizontal tree connector branch */}
-                                <div style={{ position: "absolute", left: "-16px", top: "14px", width: "14px", height: "2px", background: "#cbd5e1" }}></div>
-                                
-                                <div 
-                                  onClick={() => handleEmployeeDrillDown(r)}
-                                  style={{
-                                    fontSize: "0.7rem",
-                                    color: "#475569",
-                                    background: "#f8fafc",
-                                    border: "1px solid #e2e8f0",
-                                    borderLeft: `3px solid ${r.status === "active" ? "#10b981" : r.status === "break" ? "#f59e0b" : "#94a3b8"}`,
-                                    padding: "4px 8px",
-                                    borderRadius: "6px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "5px",
-                                    cursor: "pointer",
-                                    boxShadow: "0 1px 2px rgba(0,0,0,0.01)",
-                                    transition: "all 0.2s ease"
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "translateX(4px)";
-                                    e.currentTarget.style.background = "#f1f5f9";
-                                    e.currentTarget.style.borderColor = "#cbd5e1";
-                                    e.currentTarget.style.boxShadow = "0 3px 8px -3px rgba(0,0,0,0.08)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "translateX(0)";
-                                    e.currentTarget.style.background = "#f8fafc";
-                                    e.currentTarget.style.borderColor = "#e2e8f0";
-                                    e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.01)";
-                                  }}
-                                >
-                                  <span style={{ color: r.status === "active" ? "#10b981" : r.status === "break" ? "#f59e0b" : "#94a3b8", fontSize: "0.55rem" }}>●</span>
-                                  <span style={{ fontWeight: 600 }}>👤 {r.name}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                        {/* Manager Card */}
+                        <div 
+                          className="hierarchy-manager-card"
+                          onClick={() => setExpandedManagers(prev => ({ ...prev, [manager.id]: !isManagerExpanded }))}
+                        >
+                          {/* Profile view eye icon */}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleEmployeeDrillDown(manager); }} 
+                            style={{ 
+                              position: "absolute", 
+                              top: "4px", 
+                              right: "4px", 
+                              width: "16px",
+                              height: "16px",
+                              borderRadius: "4px",
+                              padding: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              opacity: 0.6,
+                              transition: "all 0.2s",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer"
+                            }}
+                            title="View Profile"
+                          >
+                            <LucideEye size={8} />
+                          </button>
+
+                          <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#1e3a8a", textAlign: "center", display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={manager.name}>{manager.name}</span>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 600, color: manager.status === "offline" ? "#64748b" : "#10b981", marginTop: "2px" }}>
+                            ({manager.status === "active" ? "Active" : manager.status === "break" ? "Break" : "Offline"})
+                          </span>
+                          <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#2563eb", marginTop: "4px" }}>
+                            Team Size: {manager.tls?.reduce((acc: number, t: any) => acc + (t.recruiters?.length || 0), 0) || 0}
+                          </span>
+                        </div>
+
+                        {/* Level 3: Team Leads Row */}
+                        {isManagerExpanded && manager.tls && manager.tls.length > 0 && (
+                          <>
+                            {/* Vertical Line down from Manager */}
+                            <div className="hierarchy-line-vertical" />
+
+                            <div style={{ display: "flex", justifyContent: "center", position: "relative" }}>
+                              {manager.tls.map((tl: any, tIdx: number) => {
+                                const isTlExpanded = expandedTls[tl.id] ?? true;
+
+                                return (
+                                  <div key={tl.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", padding: "0 8px" }}>
+                                    
+                                    {/* Horizontal connector line for TLs */}
+                                    <div style={{ display: "flex", width: "100%", height: "10px", position: "relative" }}>
+                                      <div style={{ flex: 1, borderTop: tIdx > 0 ? "2px solid #a855f7" : "none", borderRight: "2px solid #a855f7" }} />
+                                      <div style={{ flex: 1, borderTop: tIdx < manager.tls.length - 1 ? "2px solid #a855f7" : "none" }} />
+                                    </div>
+
+                                    {/* TL Card */}
+                                    <div 
+                                      className="hierarchy-tl-card"
+                                      onClick={() => setExpandedTls(prev => ({ ...prev, [tl.id]: !isTlExpanded }))}
+                                    >
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleEmployeeDrillDown(tl); }} 
+                                        style={{ 
+                                          position: "absolute", 
+                                          top: "4px", 
+                                          right: "4px", 
+                                          width: "16px",
+                                          height: "16px",
+                                          borderRadius: "4px",
+                                          padding: 0,
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          opacity: 0.6,
+                                          transition: "all 0.2s",
+                                          background: "none",
+                                          border: "none",
+                                          cursor: "pointer"
+                                        }}
+                                        title="View Profile"
+                                      >
+                                        <LucideEye size={8} />
+                                      </button>
+
+                                      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#581c87", textAlign: "center", display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={tl.name}>{tl.name}</span>
+                                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#7e22ce", marginTop: "2px" }}>
+                                        ({tl.recruiters?.length || 0} {(tl.recruiters?.length || 0) === 1 ? "Recruiter" : "Recruiters"})
+                                      </span>
+                                    </div>
+
+                                    {/* Level 4: Recruiters Row */}
+                                    {isTlExpanded && tl.recruiters && tl.recruiters.length > 0 && (
+                                      <>
+                                        {/* Vertical line down from TL */}
+                                        <div className="hierarchy-line-vertical" />
+
+                                        <div style={{ display: "flex", justifyContent: "center", position: "relative" }}>
+                                          {tl.recruiters.map((recruiter: any, rIdx: number) => {
+                                            const initials = recruiter.name ? recruiter.name.split(" ").map((n: any) => n[0] || "").join("").toUpperCase().substring(0, 2) : "R";
+
+                                            return (
+                                              <div key={recruiter.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", padding: "0 2px", minWidth: "32px" }}>
+                                                
+                                                {/* Horizontal connector line for recruiters */}
+                                                <div style={{ display: "flex", width: "100%", height: "10px", position: "relative" }}>
+                                                  <div style={{ flex: 1, borderTop: rIdx > 0 ? "2px solid #a855f7" : "none", borderRight: "2px solid #a855f7" }} />
+                                                  <div style={{ flex: 1, borderTop: rIdx < tl.recruiters.length - 1 ? "2px solid #a855f7" : "none" }} />
+                                                </div>
+
+                                                {/* Recruiter Circle Node */}
+                                                <div 
+                                                  className={`hierarchy-recruiter-node ${(recruiter.status === "active" || recruiter.status === "break") ? "online" : "offline"}`}
+                                                  onClick={() => handleEmployeeDrillDown(recruiter)}
+                                                  title={`${recruiter.name} (${recruiter.status === "active" ? "Active" : recruiter.status === "break" ? "Break" : "Offline"})`}
+                                                >
+                                                  {initials}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
+
+              {/* Legend at the bottom */}
+              <div style={{ 
+                display: "flex", 
+                gap: "12px", 
+                marginTop: "20px", 
+                background: "#ffffff", 
+                padding: "5px 16px", 
+                borderRadius: "9999px", 
+                border: "1px solid #cbd5e1",
+                fontSize: "0.7rem",
+                fontWeight: 800,
+                color: "#475569",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#0c2340" }} />
+                  <span>Executive</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3b82f6" }} />
+                  <span>Manager</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#8b5cf6" }} />
+                  <span>Team Lead</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981" }} />
+                  <span>Recruiter</span>
+                </div>
+              </div>
+
             </div>
-          ))}
+          </div>
         </div>
       </div>
     );
@@ -1229,9 +1380,9 @@ const DashboardHome = ({ candidates = [], userProfile = null, navigate }: { cand
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "calc(100vh - 120px)", color: "#2563eb", background: "#f8fafc" }}>
-        <LucideRefreshCw className="animate-spin" size={48} />
-        <span style={{ marginLeft: "16px", fontSize: "1.2rem", fontWeight: 800 }}>Initializing Executive Command Console...</span>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "calc(100vh - 120px)", background: "#f8fafc", flexDirection: "column", gap: "15px" }}>
+        <LucideLoader2 className="animate-spin" size={40} color="#2563eb" />
+        <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#64748b" }}>Initializing Executive Command Console...</span>
       </div>
     );
   }
@@ -1414,6 +1565,26 @@ const DashboardHome = ({ candidates = [], userProfile = null, navigate }: { cand
             sectionKey="orgTree"
             collapsedSections={collapsedSections}
             toggleSection={toggleSection}
+            headerRight={
+              <div onClick={(e) => e.stopPropagation()}>
+                <button 
+                  onClick={toggleAllNodes} 
+                  className="quick-action-btn"
+                  style={{ 
+                    padding: "4px 10px", 
+                    fontSize: "0.7rem", 
+                    borderRadius: "6px", 
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    color: "#475569"
+                  }}
+                >
+                  {allExpanded ? "Collapse All" : "Expand All"}
+                </button>
+              </div>
+            }
           >
             {renderOrgTree()}
           </DashboardCard>
