@@ -6221,7 +6221,7 @@ app.get("/api/reports/team", authenticate, async (req, res) => {
                 // Take the first check-in
                 const sortedAttendance = [...recAttendance].sort((a, b) => new Date(a.loginTime).getTime() - new Date(b.loginTime).getTime());
                 const firstAtt = sortedAttendance[0];
-                checkInTime = firstAtt.loginTime ? new Date(firstAtt.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : null;
+                checkInTime = firstAtt.loginTime ? new Date(firstAtt.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : null;
 
                 // Final checkout logic: ONLY show final checkout time if shift ended AND day completed OR no further login
                 const shift = firstAtt.shift;
@@ -7507,8 +7507,8 @@ app.get("/api/boss/team-monitoring", authenticate, async (req, res) => {
             let openBreak = null;
 
             if (att) {
-                checkInTime = att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true }) : "N/A";
-                checkOutTime = att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true }) : "N/A";
+                checkInTime = att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) : "N/A";
+                checkOutTime = att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) : "N/A";
                 logoutCountToday = att.logoutCount || 0;
 
                 const breaks = att.breaks || [];
@@ -8516,8 +8516,8 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
             const att = attendances.find(a => a.userId === user.id);
             const wHours = att ? parseFloat(att.totalWorkingHours || 0) : 0;
             const bMins = att ? parseInt(att.totalBreakTime || 0) : 0;
-            const checkIn = att && att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "Absent";
-            const checkOut = att && att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "N/A";
+            const checkIn = att && att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : "Absent";
+            const checkOut = att && att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : "N/A";
 
             let late = false;
             let early = false;
@@ -8726,8 +8726,8 @@ app.get("/api/boss/reports-hub", authenticate, async (req, res) => {
                 const user = users.find(u => u.id === att.userId);
                 const wHours = parseFloat(att.totalWorkingHours || 0);
                 const bMins = parseInt(att.totalBreakTime || 0);
-                const checkIn = att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "Absent";
-                const checkOut = att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "N/A";
+                const checkIn = att.loginTime ? new Date(att.loginTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : "Absent";
+                const checkOut = att.logoutTime ? new Date(att.logoutTime).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : "N/A";
                 
                 let late = false;
                 let early = false;
